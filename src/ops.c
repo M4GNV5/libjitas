@@ -5,8 +5,15 @@
 static int instructionCount;
 static jitas_instruction_t instructions[];
 
-bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg)
+bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction_t *ins)
 {
+	if(arg->type == JITAS_ARG_NONE && opArg == JITAS_ARG_NONE)
+		return true;
+
+	//"common" arguments (imm, reg, modrm) must match in size
+	if(arg->type <= JITAS_ARG_MODRM && arg->type == opArg && arg->size != ins->size)
+		return false;
+
 	if(arg->type == opArg)
 		return true;
 	if(arg->type == JITAS_ARG_IMM && opArg == JITAS_ARG_IMM8 && arg->imm >= INT8_MIN && arg->imm <= INT8_MAX)
@@ -30,7 +37,7 @@ jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *
 		if(strcmp(instructions[i].label, label) == 0)
 		{
 			jitas_instruction_t *ins = instructions + i;
-			if(compareArgs(src, ins->source) && compareArgs(dst, ins->destination))
+			if(compareArgs(src, ins->source, ins) && compareArgs(dst, ins->destination, ins))
 				return ins;
 		}
 	}

@@ -16,6 +16,8 @@ int main()
 	jitas_argument_t dst;
 	jitas_findRegister("r11b", &dst.size, &dst.mem.base, &dst.needsRex);
 
+	//TODO check if jitas_findRegister returns true (aka if dst is valid)
+
 	jitas_instruction_t *ins = jitas_findInstruction("mov", &src, &dst);
 
 	uint8_t buff[32] = {0};
