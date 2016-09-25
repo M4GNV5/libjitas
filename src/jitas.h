@@ -14,6 +14,8 @@ typedef enum
 
 	//special
 	JITAS_ARG_IMM8, //imm8 on a 2/4/8 byte instruction
+	JITAS_ARG_IMM16, //imm16 on a 1/4/8 byte instruction
+	JITAS_ARG_IMM_MAX32, //imm size defined by arg.size but max 4 byte
 	JITAS_ARG_REGA, //al, ax, eax, rax
 	JITAS_ARG_REGCL, //cl
 } jitas_argtype_t;
@@ -42,7 +44,7 @@ typedef struct
 	const char *label;
 	int oplen;
 	uint8_t opcode[3];
-	int8_t size;
+	bool isByteOp;
 	jitas_argtype_t source;
 	jitas_argtype_t destination;
 } jitas_instruction_t;

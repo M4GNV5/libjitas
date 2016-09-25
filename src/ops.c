@@ -18,13 +18,21 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 			return true;
 	}
 
-	if((arg->size != 1 && ins->size == 1) || (arg->size == 1 && ins->size != 1))
+	if((arg->size != 1 && ins->isByteOp) || (arg->size == 1 && !ins->isByteOp))
 		return false;
 
 	if(arg->type == opArg)
 		return true;
-	if(arg->type == JITAS_ARG_IMM && opArg == JITAS_ARG_IMM8 && arg->imm >= INT8_MIN && arg->imm <= INT8_MAX)
-		return true;
+
+	if(arg->type == JITAS_ARG_IMM)
+	{
+		if(opArg == JITAS_ARG_IMM8 && arg->imm >= INT8_MIN && arg->imm <= INT8_MAX)
+			return true;
+		if(opArg == JITAS_ARG_IMM16 && arg->imm >= INT16_MIN && arg->imm <= INT16_MAX)
+			return true;
+		if(opArg == JITAS_ARG_IMM_MAX32 && arg->imm >= INT32_MIN && arg->imm <= INT32_MAX)
+			return true;
+	}
 
 	if(arg->type == JITAS_ARG_REG && opArg == JITAS_ARG_MODRM)
 			return true;
@@ -48,116 +56,116 @@ jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *
 }
 
 static jitas_instruction_t instructions[] = {
-	{"mov", 1, {0x88}, 1, JITAS_ARG_REG, JITAS_ARG_MODRM},
-	{"mov", 1, {0x89}, 4, JITAS_ARG_REG, JITAS_ARG_MODRM},
-	{"mov", 1, {0x8A}, 1, JITAS_ARG_MODRM, JITAS_ARG_REG},
-	{"mov", 1, {0x8B}, 4, JITAS_ARG_MODRM, JITAS_ARG_REG},
+	{"mov", 1, {0x88}, true, JITAS_ARG_REG, JITAS_ARG_MODRM},
+	{"mov", 1, {0x89}, false, JITAS_ARG_REG, JITAS_ARG_MODRM},
+	{"mov", 1, {0x8A}, true, JITAS_ARG_MODRM, JITAS_ARG_REG},
+	{"mov", 1, {0x8B}, false, JITAS_ARG_MODRM, JITAS_ARG_REG},
 	//... seg:offset movs 8C, 8E, A0, A1, A2, A3
-	{"mov", 1, {0xB0}, 1, JITAS_ARG_IMM, JITAS_ARG_REG},
-	{"mov", 1, {0xB8}, 4, JITAS_ARG_IMM, JITAS_ARG_REG},
-	{"mov", 1, {0xC6, 0}, 1, JITAS_ARG_IMM, JITAS_ARG_MODRM},
-	{"mov", 1, {0xC7, 0}, 4, JITAS_ARG_IMM, JITAS_ARG_MODRM},
+	{"mov", 1, {0xB0}, true, JITAS_ARG_IMM, JITAS_ARG_REG},
+	{"mov", 1, {0xB8}, false, JITAS_ARG_IMM, JITAS_ARG_REG},
+	{"mov", 1, {0xC6, 0}, true, JITAS_ARG_IMM, JITAS_ARG_MODRM},
+	{"mov", 1, {0xC7, 0}, false, JITAS_ARG_IMM, JITAS_ARG_MODRM},
 
-	{"add", 1, {0x04}, 1, JITAS_ARG_IMM, JITAS_ARG_REGA},
-	{"add", 1, {0x05}, 4, JITAS_ARG_IMM, JITAS_ARG_REGA},
-	{"add", 1, {0x80, 0}, 1, JITAS_ARG_IMM, JITAS_ARG_MODRM},
-	{"add", 1, {0x81, 0}, 4, JITAS_ARG_IMM, JITAS_ARG_MODRM},
-	{"add", 1, {0x83, 0}, 4, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
-	{"add", 1, {0x00}, 1, JITAS_ARG_REG, JITAS_ARG_MODRM},
-	{"add", 1, {0x01}, 4, JITAS_ARG_REG, JITAS_ARG_MODRM},
-	{"add", 1, {0x02}, 1, JITAS_ARG_MODRM, JITAS_ARG_REG},
-	{"add", 1, {0x03}, 4, JITAS_ARG_MODRM, JITAS_ARG_REG},
+	{"add", 1, {0x04}, true, JITAS_ARG_IMM, JITAS_ARG_REGA},
+	{"add", 1, {0x05}, false, JITAS_ARG_IMM_MAX32, JITAS_ARG_REGA},
+	{"add", 1, {0x80, 0}, true, JITAS_ARG_IMM, JITAS_ARG_MODRM},
+	{"add", 1, {0x81, 0}, false, JITAS_ARG_IMM_MAX32, JITAS_ARG_MODRM},
+	{"add", 1, {0x83, 0}, false, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"add", 1, {0x00}, true, JITAS_ARG_REG, JITAS_ARG_MODRM},
+	{"add", 1, {0x01}, false, JITAS_ARG_REG, JITAS_ARG_MODRM},
+	{"add", 1, {0x02}, true, JITAS_ARG_MODRM, JITAS_ARG_REG},
+	{"add", 1, {0x03}, false, JITAS_ARG_MODRM, JITAS_ARG_REG},
 
-	{"sub", 1, {0x2C}, 1, JITAS_ARG_IMM, JITAS_ARG_REGA},
-	{"sub", 1, {0x2D}, 4, JITAS_ARG_IMM, JITAS_ARG_REGA},
-	{"sub", 1, {0x80, 5}, 1, JITAS_ARG_IMM, JITAS_ARG_MODRM},
-	{"sub", 1, {0x81, 5}, 4, JITAS_ARG_IMM, JITAS_ARG_MODRM},
-	{"sub", 1, {0x83, 5}, 4, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
-	{"sub", 1, {0x28}, 1, JITAS_ARG_REG, JITAS_ARG_MODRM},
-	{"sub", 1, {0x29}, 4, JITAS_ARG_REG, JITAS_ARG_MODRM},
-	{"sub", 1, {0x2A}, 1, JITAS_ARG_MODRM, JITAS_ARG_REG},
-	{"sub", 1, {0x2B}, 4, JITAS_ARG_MODRM, JITAS_ARG_REG},
+	{"sub", 1, {0x2C}, true, JITAS_ARG_IMM, JITAS_ARG_REGA},
+	{"sub", 1, {0x2D}, false, JITAS_ARG_IMM_MAX32, JITAS_ARG_REGA},
+	{"sub", 1, {0x80, 5}, true, JITAS_ARG_IMM, JITAS_ARG_MODRM},
+	{"sub", 1, {0x81, 5}, false, JITAS_ARG_IMM_MAX32, JITAS_ARG_MODRM},
+	{"sub", 1, {0x83, 5}, false, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"sub", 1, {0x28}, true, JITAS_ARG_REG, JITAS_ARG_MODRM},
+	{"sub", 1, {0x29}, false, JITAS_ARG_REG, JITAS_ARG_MODRM},
+	{"sub", 1, {0x2A}, true, JITAS_ARG_MODRM, JITAS_ARG_REG},
+	{"sub", 1, {0x2B}, false, JITAS_ARG_MODRM, JITAS_ARG_REG},
 
-	{"shl", 1, {0xD0, 4}, 1, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"shl", 1, {0xD1, 4}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"shl", 1, {0xD2, 4}, 1, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"shl", 1, {0xD3, 4}, 4, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"shl", 1, {0xC0, 4}, 1, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
-	{"shl", 1, {0xC1, 4}, 4, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"shl", 1, {0xD0, 4}, true, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"shl", 1, {0xD1, 4}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"shl", 1, {0xD2, 4}, true, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"shl", 1, {0xD3, 4}, false, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"shl", 1, {0xC0, 4}, true, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"shl", 1, {0xC1, 4}, false, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
 
-	{"sal", 1, {0xD0, 4}, 1, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"sal", 1, {0xD1, 4}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"sal", 1, {0xD2, 4}, 1, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"sal", 1, {0xD3, 4}, 4, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"sal", 1, {0xC0, 4}, 1, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
-	{"sal", 1, {0xC1, 4}, 4, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"sal", 1, {0xD0, 4}, true, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"sal", 1, {0xD1, 4}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"sal", 1, {0xD2, 4}, true, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"sal", 1, {0xD3, 4}, false, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"sal", 1, {0xC0, 4}, true, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"sal", 1, {0xC1, 4}, false, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
 
-	{"shr", 1, {0xD0, 5}, 1, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"shr", 1, {0xD1, 5}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"shr", 1, {0xD2, 5}, 1, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"shr", 1, {0xD3, 5}, 4, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"shr", 1, {0xC0, 5}, 1, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
-	{"shr", 1, {0xC1, 5}, 4, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"shr", 1, {0xD0, 5}, true, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"shr", 1, {0xD1, 5}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"shr", 1, {0xD2, 5}, true, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"shr", 1, {0xD3, 5}, false, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"shr", 1, {0xC0, 5}, true, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"shr", 1, {0xC1, 5}, false, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
 
-	{"sar", 1, {0xD0, 7}, 1, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"sar", 1, {0xD1, 7}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"sar", 1, {0xD2, 7}, 1, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"sar", 1, {0xD3, 7}, 4, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
-	{"sar", 1, {0xC0, 7}, 1, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
-	{"sar", 1, {0xC1, 7}, 4, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"sar", 1, {0xD0, 7}, true, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"sar", 1, {0xD1, 7}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"sar", 1, {0xD2, 7}, true, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"sar", 1, {0xD3, 7}, false, JITAS_ARG_REGCL, JITAS_ARG_MODRM},
+	{"sar", 1, {0xC0, 7}, true, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
+	{"sar", 1, {0xC1, 7}, false, JITAS_ARG_IMM8, JITAS_ARG_MODRM},
 
-	{"jmp", 1, {0xEB}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jmp", 1, {0xE9}, 4, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jmp", 1, {0xFF, 4}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"jmp", 1, {0xEB}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jmp", 1, {0xE9}, false, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jmp", 1, {0xFF, 4}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
 	//... far jmp
 
-	{"jo", 1, {0x70}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jno", 1, {0x71}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jb", 1, {0x72}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jc", 1, {0x72}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnae", 1, {0x72}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnb", 1, {0x73}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnc", 1, {0x73}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jae", 1, {0x73}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"je", 1, {0x74}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jz", 1, {0x74}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jne", 1, {0x75}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnz", 1, {0x75}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jbe", 1, {0x76}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jna", 1, {0x76}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnbe", 1, {0x77}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"ja", 1, {0x77}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"js", 1, {0x78}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jns", 1, {0x79}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jp", 1, {0x7A}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jpe", 1, {0x7A}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jpo", 1, {0x7B}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnp", 1, {0x7B}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jl", 1, {0x7C}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnge", 1, {0x7C}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnl", 1, {0x7D}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jge", 1, {0x7D}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jle", 1, {0x7E}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jng", 1, {0x7E}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jnle", 1, {0x7F}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"jg", 1, {0x7F}, 1, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jo", 1, {0x70}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jno", 1, {0x71}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jb", 1, {0x72}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jc", 1, {0x72}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnae", 1, {0x72}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnb", 1, {0x73}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnc", 1, {0x73}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jae", 1, {0x73}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"je", 1, {0x74}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jz", 1, {0x74}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jne", 1, {0x75}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnz", 1, {0x75}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jbe", 1, {0x76}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jna", 1, {0x76}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnbe", 1, {0x77}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"ja", 1, {0x77}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"js", 1, {0x78}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jns", 1, {0x79}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jp", 1, {0x7A}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jpe", 1, {0x7A}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jpo", 1, {0x7B}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnp", 1, {0x7B}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jl", 1, {0x7C}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnge", 1, {0x7C}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnl", 1, {0x7D}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jge", 1, {0x7D}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jle", 1, {0x7E}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jng", 1, {0x7E}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jnle", 1, {0x7F}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"jg", 1, {0x7F}, true, JITAS_ARG_NONE, JITAS_ARG_IMM},
 
-	{"call", 1, {0xE8}, 4, JITAS_ARG_NONE, JITAS_ARG_IMM},
-	{"call", 1, {0xFF, 2}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"call", 1, {0xE8}, false, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"call", 1, {0xFF, 2}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
 	//... far call
 
-	{"ret", 1, {0xC3}, 0, JITAS_ARG_NONE, JITAS_ARG_NONE},
-	{"ret", 1, {0xC2}, 2, JITAS_ARG_NONE, JITAS_ARG_IMM},
+	{"ret", 1, {0xC3}, false, JITAS_ARG_NONE, JITAS_ARG_NONE},
+	{"ret", 1, {0xC2}, false, JITAS_ARG_NONE, JITAS_ARG_IMM16},
 	//... far ret
 
-	{"push", 1, {0xFF, 6}, sizeof(void *), JITAS_ARG_MODRM, JITAS_ARG_NONE},
-	{"push", 1, {0x50}, sizeof(void *), JITAS_ARG_REG, JITAS_ARG_NONE},
-	{"push", 1, {0x6A}, 1, JITAS_ARG_IMM, JITAS_ARG_NONE},
-	{"push", 1, {0x68}, 4, JITAS_ARG_IMM, JITAS_ARG_NONE},
+	{"push", 1, {0xFF, 6}, false, JITAS_ARG_MODRM, JITAS_ARG_NONE},
+	{"push", 1, {0x50}, false, JITAS_ARG_REG, JITAS_ARG_NONE},
+	{"push", 1, {0x6A}, true, JITAS_ARG_IMM, JITAS_ARG_NONE},
+	{"push", 1, {0x68}, false, JITAS_ARG_IMM_MAX32, JITAS_ARG_NONE},
 	//... push segment register
 
-	{"pop", 1, {0x8F, 0}, sizeof(void *), JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"pop", 1, {0x50}, sizeof(void *), JITAS_ARG_NONE, JITAS_ARG_REG},
+	{"pop", 1, {0x8F, 0}, false, JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"pop", 1, {0x50}, false, JITAS_ARG_NONE, JITAS_ARG_REG},
 	//... pop segment register
 };
 static int instructionCount = sizeof(instructions) / sizeof(jitas_instruction_t);
