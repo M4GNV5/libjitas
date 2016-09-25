@@ -2,6 +2,7 @@
 #define _JITAS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum
 {
@@ -46,6 +47,7 @@ typedef struct
 } jitas_instruction_t;
 
 jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
+bool jitas_findRegister(const char *label, jitas_argument_t *arg);
 int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
 
 #endif

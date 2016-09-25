@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "jitas.h"
+#include "src/jitas.h"
 
 int main()
 {
@@ -9,14 +9,12 @@ int main()
 		.size = 4,
 		.mem = {
 			.base = 0,
-			.offset = 0xFFFFFF
+			.offset = 42,
+			.scale = 0
 		}
 	};
-	jitas_argument_t dst = {
-		.type = JITAS_ARG_REG,
-		.size = 4,
-		.mem = { .base = 2 },
-	};
+	jitas_argument_t dst;
+	jitas_findRegister("eax", &dst);
 
 	jitas_instruction_t *ins = jitas_findInstruction("mov", &src, &dst);
 
