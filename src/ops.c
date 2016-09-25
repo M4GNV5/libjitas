@@ -10,8 +10,7 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 	if(arg->type == JITAS_ARG_NONE && opArg == JITAS_ARG_NONE)
 		return true;
 
-	//"common" arguments (imm, reg, modrm) must match in size
-	if(arg->type <= JITAS_ARG_MODRM && arg->type == opArg && arg->size != ins->size)
+	if((arg->size != 1 && ins->size == 1) || (arg->size == 1 && ins->size != 1))
 		return false;
 
 	if(arg->type == opArg)
@@ -24,6 +23,8 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 		if(opArg == JITAS_ARG_REGA && arg->mem.base == 0)
 			return true;
 		if(opArg == JITAS_ARG_REGCL && arg->size == 1 && arg->mem.base == 1)
+			return true;
+		if(opArg == JITAS_ARG_MODRM)
 			return true;
 	}
 
@@ -144,18 +145,18 @@ static jitas_instruction_t instructions[] = {
 	{"call", 1, {0xFF, 2}, 4, JITAS_ARG_NONE, JITAS_ARG_MODRM},
 	//... far call
 
-	{"ret", 1, {0xC3}, -1, JITAS_ARG_NONE, JITAS_ARG_NONE},
+	{"ret", 1, {0xC3}, 0, JITAS_ARG_NONE, JITAS_ARG_NONE},
 	{"ret", 1, {0xC2}, 2, JITAS_ARG_NONE, JITAS_ARG_IMM},
 	//... far ret
 
-	{"push", 1, {0xFF, 6}, -1, JITAS_ARG_MODRM, JITAS_ARG_NONE},
-	{"push", 1, {0x50}, -1, JITAS_ARG_REG, JITAS_ARG_NONE},
+	{"push", 1, {0xFF, 6}, sizeof(void *), JITAS_ARG_MODRM, JITAS_ARG_NONE},
+	{"push", 1, {0x50}, sizeof(void *), JITAS_ARG_REG, JITAS_ARG_NONE},
 	{"push", 1, {0x6A}, 1, JITAS_ARG_IMM, JITAS_ARG_NONE},
 	{"push", 1, {0x68}, 4, JITAS_ARG_IMM, JITAS_ARG_NONE},
 	//... push segment register
 
-	{"pop", 1, {0x8F, 0}, -1, JITAS_ARG_NONE, JITAS_ARG_MODRM},
-	{"pop", 1, {0x50}, -1, JITAS_ARG_NONE, JITAS_ARG_REG},
+	{"pop", 1, {0x8F, 0}, sizeof(void *), JITAS_ARG_NONE, JITAS_ARG_MODRM},
+	{"pop", 1, {0x50}, sizeof(void *), JITAS_ARG_NONE, JITAS_ARG_REG},
 	//... pop segment register
 };
 static int instructionCount = sizeof(instructions) / sizeof(jitas_instruction_t);

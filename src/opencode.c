@@ -137,12 +137,14 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		{
 			case 0b01:
 				*(int8_t *)ptr++ = dst->mem.offset;
-				ptr++;
 				break;
 			case 0b10:
 				*(int32_t *)ptr++ = dst->mem.offset;
 				break;
 		}
+
+		if(srcType != JITAS_ARG_REG)
+			ptr += jitas_placeArg(ptr, src);
 
 		return ptr - startPtr;
 	}
@@ -151,6 +153,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		ptr--;
 		*ptr &= 0xF8;
 		*ptr |= src->mem.base & 7;
+		ptr++;
 
 		if(src->needsRex && src->mem.base > 7)
 			*startPtr |= 0b0001;
@@ -162,23 +165,19 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		ptr--;
 		*ptr &= 0xF8;
 		*ptr |= dst->mem.base & 0b111;
+		ptr++;
 
 		if(dst->needsRex && dst->mem.base > 7)
 			*startPtr |= 1;
 
 		return ptr - startPtr + jitas_placeArg(ptr, src);
 	}
-	else if(ins->source == JITAS_ARG_IMM || ins->source == JITAS_ARG_NONE
-		&& ins->destination == JITAS_ARG_IMM || ins->destination == JITAS_ARG_NONE)
+	else
 	{
 		int size = ptr - startPtr;
 		size += jitas_placeArg(ptr, src);
 		size += jitas_placeArg(ptr, dst);
 
 		return size;
-	}
-	else
-	{
-		return -1;
 	}
 }

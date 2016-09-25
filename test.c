@@ -5,21 +5,32 @@
 int main()
 {
 	jitas_argument_t src = {
-		.type = JITAS_ARG_MODRM,
+		.type = JITAS_ARG_IMM,
 		.size = 4,
-		.mem = {
-			.base = 0,
-			.index = 3,
-			.offset = 42,
-			.scale = 4
-		}
+		.imm = 0xdeadc0de
 	};
 	jitas_argument_t dst;
-	jitas_findRegister("ecx", &dst.size, &dst.mem.base, &dst.needsRex);
+	dst.mem.scale = 0;
+	dst.mem.offset = 0;
+	if(!jitas_findRegister("ecx", &dst.size, &dst.mem.base, &dst.needsRex))
+	{
+		fprintf(stderr, "Invalid register\n");
+		return 1;
+	}
 
-	//TODO check if jitas_findRegister returns true (aka if dst is valid)
+	if(src.type <= JITAS_ARG_MODRM && dst.type <= JITAS_ARG_MODRM && src.size != dst.size)
+	{
+		fprintf(stderr, "Size mismatch\n");
+		return 1;
+	}
 
-	jitas_instruction_t *ins = jitas_findInstruction("mov", &src, &dst);
+	jitas_instruction_t *ins = jitas_findInstruction("add", &src, &dst);
+
+	if(ins == NULL)
+	{
+		fprintf(stderr, "Invalid instruction\n");
+		return 1;
+	}
 
 	uint8_t buff[32] = {0};
 	int len = jitas_encode(buff, ins, &src, &dst);
@@ -29,4 +40,5 @@ int main()
 		printf("%02hhX ", buff[i]);
 	}
 	printf("\n");
+	return 0;
 }
