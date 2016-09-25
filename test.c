@@ -6,15 +6,16 @@ int main()
 {
 	jitas_argument_t src = {
 		.type = JITAS_ARG_MODRM,
-		.size = 1,
+		.size = 4,
 		.mem = {
 			.base = 0,
+			.index = 3,
 			.offset = 42,
-			.scale = 0
+			.scale = 4
 		}
 	};
 	jitas_argument_t dst;
-	jitas_findRegister("r11b", &dst.size, &dst.mem.base, &dst.needsRex);
+	jitas_findRegister("ecx", &dst.size, &dst.mem.base, &dst.needsRex);
 
 	//TODO check if jitas_findRegister returns true (aka if dst is valid)
 

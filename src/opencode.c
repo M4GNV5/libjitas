@@ -129,6 +129,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 					break;
 			}
 
+			*ptr++ = *(uint8_t *)&modrm;
 			*ptr++ = *(uint8_t *)&sib;
 		}
 
