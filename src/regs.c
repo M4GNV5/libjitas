@@ -41,6 +41,14 @@ bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *need
 	return false;
 }
 
+bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg)
+{
+	arg->type = JITAS_ARG_REG;
+	arg->mem.scale = 0;
+	arg->mem.offset = 0;
+	return jitas_findRegister(label, &arg->size, &arg->mem.base, &arg->needsRex);
+}
+
 static struct jitas_register registerInfos[] = {
 	{"al", 1, 0, false},
 	{"ah", 1, 4, false},

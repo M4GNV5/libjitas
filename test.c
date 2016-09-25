@@ -10,9 +10,7 @@ int main()
 		.imm = 0xdeadc0de
 	};
 	jitas_argument_t dst;
-	dst.mem.scale = 0;
-	dst.mem.offset = 0;
-	if(!jitas_findRegister("ecx", &dst.size, &dst.mem.base, &dst.needsRex))
+	if(!jitas_findRegisterArg("ecx", &dst))
 	{
 		fprintf(stderr, "Invalid register\n");
 		return 1;
