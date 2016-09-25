@@ -4,29 +4,25 @@
 
 int main()
 {
-	jitas_argument_t src = {
-		.type = JITAS_ARG_IMM,
-		.size = 4,
-		.imm = 0xdeadc0de
-	};
+	jitas_argument_t src;
 	jitas_argument_t dst;
-	if(!jitas_findRegisterArg("ecx", &dst))
+	if(!jitas_findRegisterArg("ecx", &dst) || !jitas_findRegisterArg("cl", &src))
 	{
 		fprintf(stderr, "Invalid register\n");
 		return 1;
 	}
 
-	if(src.type <= JITAS_ARG_MODRM && dst.type <= JITAS_ARG_MODRM && src.size != dst.size)
-	{
-		fprintf(stderr, "Size mismatch\n");
-		return 1;
-	}
-
-	jitas_instruction_t *ins = jitas_findInstruction("add", &src, &dst);
+	jitas_instruction_t *ins = jitas_findInstruction("shl", &src, &dst);
 
 	if(ins == NULL)
 	{
 		fprintf(stderr, "Invalid instruction\n");
+		return 1;
+	}
+
+	if(ins->source <= JITAS_ARG_MODRM && ins->destination <= JITAS_ARG_MODRM && src.size != dst.size)
+	{
+		fprintf(stderr, "Size mismatch\n");
 		return 1;
 	}
 

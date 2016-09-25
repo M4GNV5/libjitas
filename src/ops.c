@@ -10,6 +10,14 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 	if(arg->type == JITAS_ARG_NONE && opArg == JITAS_ARG_NONE)
 		return true;
 
+	if(arg->type == JITAS_ARG_REG)
+	{
+		if(opArg == JITAS_ARG_REGA && arg->mem.base == 0)
+			return true;
+		if(opArg == JITAS_ARG_REGCL && arg->size == 1 && arg->mem.base == 1)
+			return true;
+	}
+
 	if((arg->size != 1 && ins->size == 1) || (arg->size == 1 && ins->size != 1))
 		return false;
 
@@ -18,15 +26,8 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 	if(arg->type == JITAS_ARG_IMM && opArg == JITAS_ARG_IMM8 && arg->imm >= INT8_MIN && arg->imm <= INT8_MAX)
 		return true;
 
-	if(arg->type == JITAS_ARG_REG)
-	{
-		if(opArg == JITAS_ARG_REGA && arg->mem.base == 0)
+	if(arg->type == JITAS_ARG_REG && opArg == JITAS_ARG_MODRM)
 			return true;
-		if(opArg == JITAS_ARG_REGCL && arg->size == 1 && arg->mem.base == 1)
-			return true;
-		if(opArg == JITAS_ARG_MODRM)
-			return true;
-	}
 
 	return false;
 }
