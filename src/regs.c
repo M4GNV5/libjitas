@@ -15,7 +15,7 @@ struct jitas_register
 static int registerCount;
 static struct jitas_register registerInfos[];
 
-bool jitas_findRegister(const char *label, jitas_argument_t *arg)
+bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *needsRex)
 {
 	int i;
 	char buff[8];
@@ -28,14 +28,17 @@ bool jitas_findRegister(const char *label, jitas_argument_t *arg)
 	{
 		if(strcmp(registerInfos[i].label, buff) == 0)
 		{
-			arg->type = JITAS_ARG_REG;
-			arg->size = registerInfos[i].size;
-			arg->mem.base = registerInfos[i].id;
-			return registerInfos[i].withRex;
+			*size = registerInfos[i].size;
+			*id = registerInfos[i].id;
+
+			if(needsRex != NULL)
+				*needsRex = registerInfos[i].withRex;
+
+			return true;
 		}
 	}
 
-	arg->type = JITAS_ARG_NONE;
+	return false;
 }
 
 static struct jitas_register registerInfos[] = {

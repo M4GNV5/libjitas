@@ -14,7 +14,7 @@ int main()
 		}
 	};
 	jitas_argument_t dst;
-	jitas_findRegister("eax", &dst);
+	jitas_findRegister("edx", &dst.size, &dst.mem.base, NULL);
 
 	jitas_instruction_t *ins = jitas_findInstruction("mov", &src, &dst);
 
