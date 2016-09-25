@@ -14,16 +14,22 @@ typedef struct
 	uint8_t scale : 2;
 } __attribute__((packed)) sib_byte_t;
 
-static int jitas_placeArg(uint8_t *ptr, jitas_argument_t *arg)
+static int jitas_placeArg(uint8_t *ptr, jitas_argtype_t opArg, jitas_argument_t *arg)
 {
-	if(arg->type == JITAS_ARG_IMM8)
+	if(opArg == JITAS_ARG_IMM8)
 	{
 		*ptr = arg->imm;
 		return 1;
 	}
-	else if(arg->type == JITAS_ARG_IMM)
+	else if(opArg == JITAS_ARG_IMM16)
 	{
-		switch(arg->size)
+		*(int16_t *)ptr = arg->imm;
+		return 2;
+	}
+	else if(opArg == JITAS_ARG_IMM || opArg == JITAS_ARG_IMM_MAX32)
+	{
+		int size = arg->size > 4 && opArg == JITAS_ARG_IMM_MAX32 ? 4 : arg->size;
+		switch(size)
 		{
 			case 1:
 				*ptr = arg->imm;
@@ -38,7 +44,7 @@ static int jitas_placeArg(uint8_t *ptr, jitas_argument_t *arg)
 				*(int64_t *)ptr = arg->imm;
 				break;
 		}
-		return arg->size;
+		return size;
 	}
 	else
 	{
@@ -144,7 +150,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		}
 
 		if(srcType != JITAS_ARG_REG)
-			ptr += jitas_placeArg(ptr, src);
+			ptr += jitas_placeArg(ptr, srcType, src);
 
 		return ptr - startPtr;
 	}
@@ -158,7 +164,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(src->needsRex && src->mem.base > 7)
 			*startPtr |= 0b0001;
 
-		return ptr - startPtr + jitas_placeArg(ptr, dst);
+		return ptr - startPtr + jitas_placeArg(ptr, ins->destination, dst);
 	}
 	else if(ins->destination == JITAS_ARG_REG)
 	{
@@ -170,13 +176,13 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(dst->needsRex && dst->mem.base > 7)
 			*startPtr |= 1;
 
-		return ptr - startPtr + jitas_placeArg(ptr, src);
+		return ptr - startPtr + jitas_placeArg(ptr, ins->source, src);
 	}
 	else
 	{
 		int size = ptr - startPtr;
-		size += jitas_placeArg(ptr, src);
-		size += jitas_placeArg(ptr, dst);
+		size += jitas_placeArg(ptr, ins->source, src);
+		size += jitas_placeArg(ptr, ins->destination, dst);
 
 		return size;
 	}
