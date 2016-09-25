@@ -50,6 +50,14 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 {
 	uint8_t *startPtr = ptr;
 
+	if(src->needsRex || dst->needsRex)
+	{
+		*ptr = 0x40;
+		if(src->size == 8 || dst->size == 8)
+			*ptr |= 0b1000;
+		ptr++;
+	}
+
 	for(int i = 0; i < ins->oplen; i++)
 		*ptr++ = ins->opcode[i];
 
@@ -68,11 +76,15 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		}
 
 		if(srcType == JITAS_ARG_REG)
-			modrm.reg = src->mem.base;
+		{
+			modrm.reg = src->mem.base & 7;
+			if(src->needsRex && src->mem.base > 7)
+				*startPtr |= 0b0100;
+		}
 		else
+		{
 			modrm.reg = ins->opcode[ins->oplen];
-
-		modrm.rm = dst->mem.base;
+		}
 
 		if(dst->type == JITAS_ARG_REG)
 			modrm.mod = 0b11;
@@ -83,8 +95,12 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		else
 			modrm.mod = 0b10;
 
+		if(dst->needsRex && dst->mem.base > 7)
+			*startPtr |= 0b0001;
+
 		if(dst->mem.scale == 0)
 		{
+			modrm.rm = dst->mem.base & 7;
 			*ptr++ = *(uint8_t *)&modrm;
 		}
 		else
@@ -92,8 +108,11 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 			sib_byte_t sib;
 			modrm.rm = 0b100;
 
-			sib.base = dst->mem.base;
-			sib.index = dst->mem.index;
+			sib.base = dst->mem.base & 7;
+			sib.index = dst->mem.index & 7;
+			if(dst->needsRex && dst->mem.index > 7)
+				*startPtr |= 0b0010;
+
 			switch(dst->mem.scale)
 			{
 				case 1:
@@ -126,13 +145,27 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 
 		return ptr - startPtr;
 	}
-	else if(ins->source == JITAS_ARG_REG || ins->destination == JITAS_ARG_REG)
+	else if(ins->source == JITAS_ARG_REG)
 	{
 		ptr--;
 		*ptr &= 0xF8;
-		*ptr |= ins->source == JITAS_ARG_REG ? src->mem.base : dst->mem.base;
+		*ptr |= src->mem.base & 7;
 
-		return ptr - startPtr + jitas_placeArg(ptr, ins->source == JITAS_ARG_REG ? dst : src);
+		if(src->needsRex && src->mem.base > 7)
+			*startPtr |= 0b0001;
+
+		return ptr - startPtr + jitas_placeArg(ptr, dst);
+	}
+	else if(ins->destination == JITAS_ARG_REG)
+	{
+		ptr--;
+		*ptr &= 0xF8;
+		*ptr |= dst->mem.base & 0b111;
+
+		if(dst->needsRex && dst->mem.base > 7)
+			*startPtr |= 1;
+
+		return ptr - startPtr + jitas_placeArg(ptr, src);
 	}
 	else if(ins->source == JITAS_ARG_IMM || ins->source == JITAS_ARG_NONE
 		&& ins->destination == JITAS_ARG_IMM || ins->destination == JITAS_ARG_NONE)

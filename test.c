@@ -6,7 +6,7 @@ int main()
 {
 	jitas_argument_t src = {
 		.type = JITAS_ARG_MODRM,
-		.size = 4,
+		.size = 1,
 		.mem = {
 			.base = 0,
 			.offset = 42,
@@ -14,7 +14,7 @@ int main()
 		}
 	};
 	jitas_argument_t dst;
-	jitas_findRegister("edx", &dst.size, &dst.mem.base, NULL);
+	jitas_findRegister("r11b", &dst.size, &dst.mem.base, &dst.needsRex);
 
 	jitas_instruction_t *ins = jitas_findInstruction("mov", &src, &dst);
 

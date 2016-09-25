@@ -22,6 +22,7 @@ typedef struct
 {
 	jitas_argtype_t type;
 	int8_t size;
+	bool needsRex;
 	union
 	{
 		int64_t imm;
