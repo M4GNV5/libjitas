@@ -1,44 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
 #include "src/jitas.h"
 
-int main()
+typedef intptr_t (*asmfunc)(int argc, char **argv);
+
+int main(int argc, char **argv)
 {
-	/*const char *insLabel = "mov";
-	jitas_argument_t src = {
-		.type = JITAS_ARG_MODRM,
-		.size = 8,
-		.mem = {
-			.base = 5,
-			.index = 0,
-			.scale = 0,
-			.offset = 1337
-		}
-	};
-	jitas_argument_t dst;
-	if(!jitas_findRegisterArg("r10", &dst))
+	if(argc < 2)
 	{
-		fprintf(stderr, "Invalid register\n");
+		fprintf(stderr, "Usage: %s <file>\n", argv[0]);
 		return 1;
 	}
 
-	jitas_instruction_t *ins = jitas_findInstruction(insLabel, &src, &dst);
+	//open file
+	FILE *fd = fopen(argv[1], "rb");
 
-	if(ins == NULL)
+	if(fd == NULL)
 	{
-		fprintf(stderr, "%s", jitas_errorMsg(insLabel, &src, &dst));
+		fprintf(stderr, "Invalid file %s\n", argv[1]);
 		return 1;
 	}
 
-	uint8_t buff[32] = {0};
-	int len = jitas_encode(buff, ins, &src, &dst);*/
+	//get file size
+	fseek(fd, 0, SEEK_END);
+	long fsize = ftell(fd);
+	fseek(fd, 0, SEEK_SET);
 
-	//"mov $42, %rax\npush %rcx\nshl $5, 8(%rdi)\nadd %rdx 32(%rax,%rsi,4)"
+	//read file into buffer
+	char *str = malloc(fsize + 1);
+	fread(str, fsize, 1, fd);
+	fclose(fd);
 
-	uint8_t buff[32] = {0};
-	int len = jitas_assemble(buff, "mov $42, %rax\npush %rcx\nshl $5, 8(%rdi)\nadd %rdx, 32(%rax,%rsi,4)");
+	str[fsize] = 0;
 
+	//allocate a executable memory region
+	uint8_t *buff = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+	//assemble the assembly code from the file into said memory region
+	int len = jitas_assemble(buff, str);
+
+	//output all assembly errors
 	for(;;)
 	{
 		char *err = jitas_error();
@@ -49,13 +54,14 @@ int main()
 		free(err);
 	}
 
+	//if jitas_assemble returns 0 there was an error
 	if(len == 0)
 		return 1;
 
 	for(int i = 0; i < len; i++)
-	{
 		printf("%02hhX ", buff[i]);
-	}
 	printf("\n");
-	return 0;
+
+	asmfunc func = (void *)buff;
+	return func(argc, argv);
 }
