@@ -18,7 +18,7 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 			return true;
 	}
 
-	if((arg->size != 1 && ins->isByteOp) || (arg->size == 1 && !ins->isByteOp))
+	if(arg->type != JITAS_ARG_IMM && ((arg->size != 1 && ins->isByteOp) || (arg->size == 1 && !ins->isByteOp)))
 		return false;
 
 	if(arg->type == opArg)
