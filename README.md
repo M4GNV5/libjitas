@@ -14,7 +14,7 @@ char *jitas_error();
 ```
 
 ##Short Example
-This example assembles `mov $42, 42(%rax)` and hexdumps the assembled instruction to stdout
+This example assembles `mov %rax, 42(%rbx)` and hexdumps the assembled instruction to stdout
 ```C
 int main()
 {
@@ -22,7 +22,7 @@ int main()
 	uint8_t buff[32] = {0};
 
 	//assemble the instruction
-	int len = jitas_assemble(buff, "mov $42, 42(%rax)");
+	int len = jitas_assemble(buff, "mov %rax, 42(%rbx)");
 
 	//print any errors
 	for(;;)
