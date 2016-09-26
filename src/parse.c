@@ -130,6 +130,11 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 					skipSpaces(str);
 					curr = *(*str)++;
 				}
+				else
+				{
+					arg->mem.scale = 0;
+					arg->mem.index = 0;
+				}
 
 				if(curr != ')')
 					return false;
