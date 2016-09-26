@@ -33,6 +33,9 @@ static int convertSize(int size)
 		case 8:
 			return 3;
 	}
+
+	//TODO raise SIGABRT?
+	return 0;
 }
 
 char *jitas_errorMsg(const char *label, int size, jitas_argument_t *src, jitas_argument_t *dst)

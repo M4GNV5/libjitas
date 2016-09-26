@@ -25,7 +25,7 @@ int main()
 	uint8_t buff[32] = {0};
 	int len = jitas_encode(buff, ins, &src, &dst);
 
-	for(int i = 0; i < 32; i++)
+	for(int i = 0; i < len; i++)
 	{
 		printf("%02hhX ", buff[i]);
 	}
