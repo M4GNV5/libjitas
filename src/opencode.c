@@ -154,7 +154,8 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 				*(int8_t *)ptr++ = dst->mem.offset;
 				break;
 			case 0b10:
-				*(int32_t *)ptr++ = dst->mem.offset;
+				*(int32_t *)ptr = dst->mem.offset;
+				ptr += 4;
 				break;
 		}
 
