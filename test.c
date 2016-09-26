@@ -4,8 +4,7 @@
 
 int main()
 {
-	const char *insLabel = "push";
-	int insSize = 2;
+	const char *insLabel = "shl";
 	jitas_argument_t src = {
 		.type = JITAS_ARG_NONE,
 		.size = 2,
@@ -27,7 +26,7 @@ int main()
 
 	if(ins == NULL)
 	{
-		fprintf(stderr, "%s", jitas_errorMsg(insLabel, insSize, &src, &dst));
+		fprintf(stderr, "%s", jitas_errorMsg(insLabel, &src, &dst));
 		return 1;
 	}
 

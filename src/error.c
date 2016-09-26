@@ -4,21 +4,27 @@
 
 #include "jitas.h"
 
-static const char *argtypes[][4] = {
-	//common
-	[JITAS_ARG_NONE] = {NULL, NULL, NULL, NULL},
+static const char *argTypeTexts[][4] = {
 	[JITAS_ARG_REG] = {"r8", "r16", "r32", "r64"},
 	[JITAS_ARG_IMM] = {"imm8", "imm16", "imm32", "imm64"},
 	[JITAS_ARG_MODRM] = {"r/m8", "r/m16", "r/m32", "r/m64"},
+};
+
+static const char *insTypeTexts[][3] = {
+	//common
+	[JITAS_ARG_NONE] = {NULL, NULL, NULL},
+	[JITAS_ARG_REG] = {"r8", "r64", "r"},
+	[JITAS_ARG_IMM] = {"imm8", "imm64", "imm"},
+	[JITAS_ARG_MODRM] = {"r/m8", "r/m64", "r/m"},
 
 	//special
-	[JITAS_ARG_IMM8] = {"imm8", "imm8", "imm8", "imm8"},
-	[JITAS_ARG_IMM16] = {"imm16", "imm16", "imm16", "imm16"},
-	[JITAS_ARG_IMM_MAX32] = {"imm8", "imm16", "imm32", "imm32"},
-	[JITAS_ARG_REGA] = {"%al", "%ax", "%eax", "%rax"},
-	[JITAS_ARG_REGCL] = {"%cl", "%cl", "%cl", "%cl"},
+	[JITAS_ARG_IMM8] = {"imm8", "imm8", "imm8"},
+	[JITAS_ARG_IMM16] = {"imm16", "imm16", "imm16"},
+	[JITAS_ARG_IMM_MAX32] = {"imm8", "imm64", "imm16/imm32"},
+	[JITAS_ARG_REGA] = {"%al", "%rax", "%ax/%eax/%rax"},
+	[JITAS_ARG_REGCL] = {"%cl", "%cl", "%cl"},
 };
-static const char sizeExtensions[] = {'b', 'w', 'l', 'q'};
+static const char sizeExtensions[] = {'b', 'q', 0};
 
 static int convertSize(int size)
 {
@@ -38,10 +44,8 @@ static int convertSize(int size)
 	return 0;
 }
 
-char *jitas_errorMsg(const char *label, int size, jitas_argument_t *src, jitas_argument_t *dst)
+char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t *dst)
 {
-	size = convertSize(size);
-
 	for(int i = 0; i < jitas_instructionCount;)
 	{
 		if(strcmp(jitas_instructions[i].label, label) == 0)
@@ -53,14 +57,14 @@ char *jitas_errorMsg(const char *label, int size, jitas_argument_t *src, jitas_a
 			buff += sprintf(buff, "Invalid instruction use: '%s", label);
 
 			if(src->type != JITAS_ARG_NONE)
-				buff += sprintf(buff, " %s, %s'\n", argtypes[src->type][convertSize(src->size)],
-					argtypes[dst->type][convertSize(dst->size)]);
+				buff += sprintf(buff, " %s, %s'\n", argTypeTexts[src->type][convertSize(src->size)],
+					argTypeTexts[dst->type][convertSize(dst->size)]);
 			else if(dst->type != JITAS_ARG_NONE)
-				buff += sprintf(buff, " %s'\n", argtypes[dst->type][convertSize(dst->size)]);
+				buff += sprintf(buff, " %s'\n", argTypeTexts[dst->type][convertSize(dst->size)]);
 			else
 				buff += sprintf(buff, "'\n");
 
-			buff += sprintf(buff, "Valid overloads for '%s%c' are:\n", label, sizeExtensions[size]);
+			buff += sprintf(buff, "Valid overloads for '%s' are:\n", label);
 
 			do
 			{
@@ -74,18 +78,11 @@ char *jitas_errorMsg(const char *label, int size, jitas_argument_t *src, jitas_a
 					startBuff = newBuff;
 				}
 
-				int _size;
-				if(ins->size == JITAS_SIZE_BYTE)
-					_size = 0;
-				else if(ins->size == JITAS_SIZE_PTR)
-					_size = 3;
-				else
-					_size = size;
-
 				if(ins->source != JITAS_ARG_NONE)
-					buff += sprintf(buff, "    %s %s, %s\n", label, argtypes[ins->source][_size], argtypes[ins->destination][_size]);
+					buff += sprintf(buff, "    %s %s, %s\n", label, insTypeTexts[ins->source][ins->size],
+						insTypeTexts[ins->destination][ins->size]);
 				else if(ins->destination != JITAS_ARG_NONE)
-					buff += sprintf(buff, "    %s %s\n", label, argtypes[ins->destination][_size]);
+					buff += sprintf(buff, "    %s %s\n", label, insTypeTexts[ins->destination][ins->size]);
 				else
 					buff += sprintf(buff, "    %s\n", label);
 

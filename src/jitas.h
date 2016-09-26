@@ -61,7 +61,7 @@ extern int jitas_instructionCount;
 extern jitas_instruction_t jitas_instructions[];
 
 jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
-char *jitas_errorMsg(const char *label, int size, jitas_argument_t *src, jitas_argument_t *dst);
+char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
 bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *needsRex);
 bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg);
 int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
