@@ -20,6 +20,13 @@ typedef enum
 	JITAS_ARG_REGCL, //cl
 } jitas_argtype_t;
 
+typedef enum
+{
+	JITAS_SIZE_BYTE, //fixed 1 byte operation
+	JITAS_SIZE_PTR, //fixed sizeof(void *) byte operation
+	JITAS_SIZE_ANY, //2/4/8 byte operation (depending on suffix)
+} jitas_size_t;
+
 typedef struct
 {
 	jitas_argtype_t type;
@@ -44,9 +51,10 @@ typedef struct
 	const char *label;
 	int oplen;
 	uint8_t opcode[3];
-	bool isByteOp;
+	jitas_size_t size;
 	jitas_argtype_t source;
 	jitas_argtype_t destination;
+	int64_t flags;
 } jitas_instruction_t;
 
 extern int jitas_instructionCount;

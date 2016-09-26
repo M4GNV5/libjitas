@@ -66,23 +66,29 @@ char *jitas_errorMsg(const char *label, int size, jitas_argument_t *src, jitas_a
 			{
 				jitas_instruction_t *ins = jitas_instructions + i;
 
-				if((ins->isByteOp && size == 0) || (!ins->isByteOp && size != 0))
+				if(buff - startBuff >= buffLen - 128)
 				{
-					if(buff - startBuff >= buffLen - 128)
-					{
-						buffLen *= 2;
-						char *newBuff = realloc(startBuff, buffLen);
-						buff = newBuff + (buff - startBuff);
-						startBuff = newBuff;
-					}
-
-					if(ins->source != JITAS_ARG_NONE)
-						buff += sprintf(buff, "    %s %s, %s\n", label, argtypes[ins->source][size], argtypes[ins->destination][size]);
-					else if(ins->destination != JITAS_ARG_NONE)
-						buff += sprintf(buff, "    %s %s\n", label, argtypes[ins->destination][size]);
-					else
-						buff += sprintf(buff, "    %s\n", label);
+					buffLen *= 2;
+					char *newBuff = realloc(startBuff, buffLen);
+					buff = newBuff + (buff - startBuff);
+					startBuff = newBuff;
 				}
+
+				int _size;
+				if(ins->size == JITAS_SIZE_BYTE)
+					_size = 0;
+				else if(ins->size == JITAS_SIZE_PTR)
+					_size = 3;
+				else
+					_size = size;
+
+				if(ins->source != JITAS_ARG_NONE)
+					buff += sprintf(buff, "    %s %s, %s\n", label, argtypes[ins->source][_size], argtypes[ins->destination][_size]);
+				else if(ins->destination != JITAS_ARG_NONE)
+					buff += sprintf(buff, "    %s %s\n", label, argtypes[ins->destination][_size]);
+				else
+					buff += sprintf(buff, "    %s\n", label);
+
 				i++;
 			} while(jitas_instructions[i].label == NULL);
 

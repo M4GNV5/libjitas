@@ -4,10 +4,10 @@
 
 int main()
 {
-	const char *insLabel = "mov";
+	const char *insLabel = "push";
 	int insSize = 2;
 	jitas_argument_t src = {
-		.type = JITAS_ARG_MODRM,
+		.type = JITAS_ARG_NONE,
 		.size = 2,
 		.mem = {
 			.base = 4,
