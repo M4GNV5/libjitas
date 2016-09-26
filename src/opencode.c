@@ -98,7 +98,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 
 		if(dst->type == JITAS_ARG_REG)
 			modrm.mod = 0b11;
-		else if(dst->mem.offset == 0 && dst->mem.scale == 0 && dst->mem.base == 5)
+		else if(dst->mem.offset == 0 && dst->mem.scale == 0 && (dst->mem.base & 7) == 5)
 			modrm.mod = 0b01; //rbp+0 because modrm {mod 0, rm 5} is disp32(%rip)
 		else if(dst->mem.offset == 0)
 			modrm.mod = 0b00;
@@ -110,7 +110,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(dst->needsRex && dst->mem.base > 7)
 			*rexPtr |= 0b0001;
 
-		if(dst->mem.scale == 0 && dst->mem.base != 4)
+		if(dst->mem.scale == 0 && (dst->mem.base & 7) != 4)
 		{
 			modrm.rm = dst->mem.base & 7;
 			*ptr++ = *(uint8_t *)&modrm;
