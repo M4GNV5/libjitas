@@ -94,6 +94,8 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 
 		if(dst->type == JITAS_ARG_REG)
 			modrm.mod = 0b11;
+		else if(dst->mem.offset == 0 && dst->mem.scale == 0 && dst->mem.base == 5)
+			modrm.mod = 0b01; //rbp+0 because modrm {mod 0, rm 5} is disp32(%rip)
 		else if(dst->mem.offset == 0)
 			modrm.mod = 0b00;
 		else if(dst->mem.offset >= INT8_MIN && dst->mem.offset <= INT8_MAX)
@@ -104,7 +106,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(dst->needsRex && dst->mem.base > 7)
 			*startPtr |= 0b0001;
 
-		if(dst->mem.scale == 0)
+		if(dst->mem.scale == 0 && dst->mem.base != 4)
 		{
 			modrm.rm = dst->mem.base & 7;
 			*ptr++ = *(uint8_t *)&modrm;
@@ -121,6 +123,9 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 
 			switch(dst->mem.scale)
 			{
+				case 0:
+					sib.index = 4;
+					//fallthrough
 				case 1:
 					sib.scale = 0;
 					break;
@@ -148,6 +153,9 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 				*(int32_t *)ptr++ = dst->mem.offset;
 				break;
 		}
+
+		if(modrm.mod == 0 && modrm.rm == 5)
+			*(int32_t *)ptr++ = dst->mem.offset; //modrm {mod 0, rm 5} is disp32(%rip)
 
 		if(srcType != JITAS_ARG_REG)
 			ptr += jitas_placeArg(ptr, srcType, src);
