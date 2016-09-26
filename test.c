@@ -4,11 +4,20 @@
 
 int main()
 {
-	const char *insLabel = "shl";
-	int insSize = 8;
-	jitas_argument_t src;
+	const char *insLabel = "mov";
+	int insSize = 2;
+	jitas_argument_t src = {
+		.type = JITAS_ARG_MODRM,
+		.size = 2,
+		.mem = {
+			.base = 4,
+			.index = 0,
+			.scale = 0,
+			.offset = 42
+		}
+	};
 	jitas_argument_t dst;
-	if(!jitas_findRegisterArg("rdx", &dst) || !jitas_findRegisterArg("dl", &src))
+	if(!jitas_findRegisterArg("r10w", &dst))
 	{
 		fprintf(stderr, "Invalid register\n");
 		return 1;

@@ -56,6 +56,10 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 {
 	uint8_t *startPtr = ptr;
 
+	if(src->size == 2 || dst->size == 2)
+		*ptr++ = 0x66;
+
+	uint8_t *rexPtr = ptr;
 	if(src->needsRex || dst->needsRex)
 	{
 		*ptr = 0x40;
@@ -85,7 +89,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		{
 			modrm.reg = src->mem.base & 7;
 			if(src->needsRex && src->mem.base > 7)
-				*startPtr |= 0b0100;
+				*rexPtr |= 0b0100;
 		}
 		else
 		{
@@ -104,7 +108,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 			modrm.mod = 0b10;
 
 		if(dst->needsRex && dst->mem.base > 7)
-			*startPtr |= 0b0001;
+			*rexPtr |= 0b0001;
 
 		if(dst->mem.scale == 0 && dst->mem.base != 4)
 		{
@@ -119,7 +123,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 			sib.base = dst->mem.base & 7;
 			sib.index = dst->mem.index & 7;
 			if(dst->needsRex && dst->mem.index > 7)
-				*startPtr |= 0b0010;
+				*rexPtr |= 0b0010;
 
 			switch(dst->mem.scale)
 			{
@@ -170,7 +174,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		ptr++;
 
 		if(src->needsRex && src->mem.base > 7)
-			*startPtr |= 0b0001;
+			*rexPtr |= 0b0001;
 
 		return ptr - startPtr + jitas_placeArg(ptr, ins->destination, dst);
 	}
@@ -182,7 +186,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		ptr++;
 
 		if(dst->needsRex && dst->mem.base > 7)
-			*startPtr |= 1;
+			*rexPtr |= 0b0001;
 
 		return ptr - startPtr + jitas_placeArg(ptr, ins->source, src);
 	}
