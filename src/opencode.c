@@ -67,7 +67,7 @@ static void jitas_placeArg(jitas_context_t *ctx, jitas_argtype_t opArg, jitas_ar
 
 void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst)
 {
-	if(src->size == 2 || dst->size == 2)
+	if(ins->size == JITAS_SIZE_ANY && (src->size == 2 || dst->size == 2))
 		*ctx->ptr++ = 0x66;
 
 	uint8_t *rexPtr = ctx->ptr;

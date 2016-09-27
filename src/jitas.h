@@ -25,6 +25,7 @@ typedef enum
 
 typedef enum
 {
+	JITAS_SIZE_IGNORE, //no specal behaviour for the arguments necessary
 	JITAS_SIZE_BYTE, //fixed 1 byte operation
 	JITAS_SIZE_PTR, //fixed sizeof(void *) byte operation
 	JITAS_SIZE_ANY, //2/4/8 byte operation (depending on suffix)
