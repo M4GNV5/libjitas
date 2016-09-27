@@ -72,6 +72,15 @@ typedef struct jitas_linktable
 
 typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 
+typedef struct
+{
+	uint8_t *startPtr;
+	uint8_t *ptr;
+	void *error;
+	jitas_symboltable_t *symbols;
+	jitas_symbolresolver_t resolver;
+} jitas_context_t;
+
 extern int jitas_instructionCount;
 extern jitas_instruction_t jitas_instructions[];
 
@@ -79,8 +88,7 @@ jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *
 char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
 bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *needsRex);
 bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg);
-int jitas_encode(uint8_t *ptr, jitas_symboltable_t **symbols,
-	jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
+void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
 
 int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str);
 bool jitas_link(jitas_symboltable_t *curr, jitas_symbolresolver_t func, void *data);

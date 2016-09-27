@@ -203,6 +203,11 @@ char *jitas_error(int *line)
 
 int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
 {
+	jitas_context_t ctx;
+	ctx.startPtr = ctx.ptr = ptr;
+	ctx.error = NULL;
+	ctx.symbols = NULL;
+
 	char *errbuff;
 	char buff[32];
 	const char *argStart;
@@ -212,7 +217,6 @@ int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
 	jitas_argument_t *dst;
 	jitas_instruction_t *ins;
 	int line = 0;
-	int byteCount = 0;
 
 	while(*str != 0)
 	{
@@ -376,11 +380,11 @@ int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
 			}
 		}
 
-		len = jitas_encode(ptr, symbols, ins, src, dst);
-		byteCount += len;
-		ptr += len;
+		jitas_encode(&ctx, ins, src, dst);
 	}
-	return byteCount;
+
+	*symbols = ctx.symbols;
+	return ctx.ptr - ctx.startPtr;
 }
 
 bool jitas_link(jitas_symboltable_t *curr, jitas_symbolresolver_t func, void *data)
