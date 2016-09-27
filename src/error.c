@@ -57,14 +57,14 @@ char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t 
 			buff += sprintf(buff, "Invalid instruction use: '%s", label);
 
 			if(src->type != JITAS_ARG_NONE)
-				buff += sprintf(buff, " %s, %s'\n", argTypeTexts[src->type][convertSize(src->size)],
+				buff += sprintf(buff, " %s, %s'", argTypeTexts[src->type][convertSize(src->size)],
 					argTypeTexts[dst->type][convertSize(dst->size)]);
 			else if(dst->type != JITAS_ARG_NONE)
-				buff += sprintf(buff, " %s'\n", argTypeTexts[dst->type][convertSize(dst->size)]);
+				buff += sprintf(buff, " %s'", argTypeTexts[dst->type][convertSize(dst->size)]);
 			else
-				buff += sprintf(buff, "'\n");
+				buff += sprintf(buff, "'");
 
-			buff += sprintf(buff, "Valid overloads for '%s' are:\n", label);
+			buff += sprintf(buff, " Valid overloads for '%s' are:\n", label);
 
 			do
 			{
@@ -100,8 +100,8 @@ char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t 
 		}
 	}
 
-	int len = snprintf(NULL, 0, "Unknown instruction '%s'\n", label) + 1;
+	int len = snprintf(NULL, 0, "Unknown instruction '%s'", label) + 1;
 	char *buff = malloc(len);
-	sprintf(buff, "Unknown instruction '%s'\n", label);
+	sprintf(buff, "Unknown instruction '%s'", label);
 	return buff;
 }

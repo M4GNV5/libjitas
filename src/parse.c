@@ -222,7 +222,7 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 		{
 			buff[31] = 0;
 			errbuff = malloc(128);
-			sprintf(errbuff, "Unexpected '%s'\n", buff);
+			sprintf(errbuff, "Unexpected '%s'", buff);
 		 	addError(errbuff, line);
 			skipToNewline(&str);
 			continue;
@@ -233,7 +233,7 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 		if(!parseArg(&str, &arg0))
 		{
 			errbuff = malloc(64 + str - argStart);
-			sprintf(errbuff, "Invalid argument '%.*s'\n", (int)(str - argStart), argStart);
+			sprintf(errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
 			addError(errbuff, line);
 			skipToNewline(&str);
 			continue;
@@ -248,7 +248,7 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 			if(!parseArg(&str, &arg1))
 			{
 				errbuff = malloc(64 + str - argStart);
-				sprintf(errbuff, "Invalid argument '%.*s'\n", (int)(str - argStart), argStart);
+				sprintf(errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
 				addError(errbuff, line);
 				skipToNewline(&str);
 				continue;
@@ -287,7 +287,7 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 					break;
 				default:
 					errbuff = malloc(64);
-					sprintf(errbuff, "Instruction requires size suffix\n");
+					sprintf(errbuff, "Instruction requires size suffix");
 					addError(errbuff, line);
 					skipToNewline(&str);
 					continue;
@@ -309,7 +309,7 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 		if(*str != '\n' && *str != 0)
 		{
 			errbuff = malloc(128);
-			sprintf(errbuff, "Expected line end at line %d\n", line);
+			sprintf(errbuff, "Expected line end at line %d", line);
 		 	addError(errbuff, line);
 			skipToNewline(&str);
 			continue;
