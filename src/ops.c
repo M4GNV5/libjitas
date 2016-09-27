@@ -16,6 +16,8 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 			return true;
 		if(opArg == JITAS_ARG_REL32)
 			return true;
+		if(opArg == JITAS_ARG_MODRM)
+			return true;
 	}
 
 	if(arg->type == JITAS_ARG_IMM)

@@ -116,74 +116,95 @@ int jitas_encode(uint8_t *ptr, jitas_symboltable_t **symbols,
 			modrm.reg = ins->opcode[ins->oplen];
 		}
 
-		if(dst->type == JITAS_ARG_REG)
-			modrm.mod = 0b11;
-		else if(dst->mem.offset == 0 && dst->mem.scale == 0 && (dst->mem.base & 7) == 5)
-			modrm.mod = 0b01; //rbp+0 because modrm {mod 0, rm 5} is disp32(%rip)
-		else if(dst->mem.offset == 0)
-			modrm.mod = 0b00;
-		else if(dst->mem.offset >= INT8_MIN && dst->mem.offset <= INT8_MAX)
-			modrm.mod = 0b01;
-		else
-			modrm.mod = 0b10;
-
-		if(dst->needsRex && dst->mem.base > 7)
-			*rexPtr |= 0b0001;
-
-		if(dst->mem.scale == 0 || (dst->type == JITAS_ARG_MODRM && (dst->mem.base & 7) != 4))
+		if(dst->type == JITAS_ARG_SYMBOL)
 		{
-			modrm.rm = dst->mem.base & 7;
+			modrm.mod = 0b00;
+			modrm.rm = 5;
 			*ptr++ = *(uint8_t *)&modrm;
+
+			jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
+			entry->size = 4;
+			entry->symbol = dst->symbol;
+			entry->ptr = ptr;
+			entry->next = *symbols;
+			*symbols = entry;
+
+			*(int32_t *)ptr = 0;
+			ptr += 4;
+
+			if(srcType != JITAS_ARG_REG)
+				ptr += jitas_placeArg(ptr, startPtr, symbols, srcType, src);
+
+			entry->nextInsPtr = ptr;
 		}
 		else
 		{
-			sib_byte_t sib;
-			modrm.rm = 0b100;
+			if(dst->type == JITAS_ARG_REG)
+				modrm.mod = 0b11;
+			else if(dst->mem.offset == 0 && dst->mem.scale == 0 && (dst->mem.base & 7) == 5)
+				modrm.mod = 0b01; //rbp+0 because modrm {mod 0, rm 5} is disp32(%rip)
+			else if(dst->mem.offset == 0)
+				modrm.mod = 0b00;
+			else if(dst->mem.offset >= INT8_MIN && dst->mem.offset <= INT8_MAX)
+				modrm.mod = 0b01;
+			else
+				modrm.mod = 0b10;
 
-			sib.base = dst->mem.base & 7;
-			sib.index = dst->mem.index & 7;
-			if(dst->needsRex && dst->mem.index > 7)
-				*rexPtr |= 0b0010;
+			if(dst->needsRex && dst->mem.base > 7)
+				*rexPtr |= 0b0001;
 
-			switch(dst->mem.scale)
+			if(dst->mem.scale == 0 || (dst->type == JITAS_ARG_MODRM && (dst->mem.base & 7) != 4))
 			{
-				case 0:
-					sib.index = 4;
-					//fallthrough
-				case 1:
-					sib.scale = 0;
+				modrm.rm = dst->mem.base & 7;
+				*ptr++ = *(uint8_t *)&modrm;
+			}
+			else
+			{
+				sib_byte_t sib;
+				modrm.rm = 0b100;
+
+				sib.base = dst->mem.base & 7;
+				sib.index = dst->mem.index & 7;
+				if(dst->needsRex && dst->mem.index > 7)
+					*rexPtr |= 0b0010;
+
+				switch(dst->mem.scale)
+				{
+					case 0:
+						sib.index = 4;
+						//fallthrough
+					case 1:
+						sib.scale = 0;
+						break;
+					case 2:
+						sib.scale = 1;
+						break;
+					case 4:
+						sib.scale = 2;
+						break;
+					case 8:
+						sib.scale = 3;
+						break;
+				}
+
+				*ptr++ = *(uint8_t *)&modrm;
+				*ptr++ = *(uint8_t *)&sib;
+			}
+
+			switch(modrm.mod)
+			{
+				case 0b01:
+					*(int8_t *)ptr++ = dst->mem.offset;
 					break;
-				case 2:
-					sib.scale = 1;
-					break;
-				case 4:
-					sib.scale = 2;
-					break;
-				case 8:
-					sib.scale = 3;
+				case 0b10:
+					*(int32_t *)ptr = dst->mem.offset;
+					ptr += 4;
 					break;
 			}
 
-			*ptr++ = *(uint8_t *)&modrm;
-			*ptr++ = *(uint8_t *)&sib;
+			if(srcType != JITAS_ARG_REG)
+				ptr += jitas_placeArg(ptr, startPtr, symbols, srcType, src);
 		}
-
-		switch(modrm.mod)
-		{
-			case 0b01:
-				*(int8_t *)ptr++ = dst->mem.offset;
-				break;
-			case 0b10:
-				*(int32_t *)ptr = dst->mem.offset;
-				ptr += 4;
-				break;
-		}
-
-		if(modrm.mod == 0 && modrm.rm == 5)
-			*(int32_t *)ptr++ = dst->mem.offset; //modrm {mod 0, rm 5} is disp32(%rip)
-
-		if(srcType != JITAS_ARG_REG)
-			ptr += jitas_placeArg(ptr, startPtr, symbols, srcType, src);
 
 		return ptr - startPtr;
 	}
