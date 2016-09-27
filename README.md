@@ -10,7 +10,7 @@ int jitas_assemble(uint8_t *ptr, const char *str);
 
 //assemble errors can be retrieved with this function
 //you probably want to call this in a loop to clear out all errors (as there can be multiple)
-char *jitas_error();
+char *jitas_error(int *line);
 ```
 
 ##Short Example
@@ -27,17 +27,14 @@ int main()
 	//print any errors
 	for(;;)
 	{
-		char *err = jitas_error();
+		int line;
+		char *err = jitas_error(&line);
 		if(err == NULL)
 			break;
 
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "line %d: %s\n", line, err);
 		free(err);
 	}
-
-	//if jitas_assemble returns 0 there was an error
-	if(len == 0)
-		return 1;
 
 	//hexdump the assembled instruction to stdout
 	for(int i = 0; i < len; i++)
@@ -101,17 +98,14 @@ int main(int argc, char **argv)
 	//output all assembly errors
 	for(;;)
 	{
-		char *err = jitas_error();
+		int line;
+		char *err = jitas_error(&line);
 		if(err == NULL)
 			break;
 
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "line %d: %s\n", line, err);
 		free(err);
 	}
-
-	//if jitas_assemble returns 0 there was an error
-	if(len == 0)
-		return 1;
 
 	//call the assembled instructions like a function
 	asmfunc func = (void *)buff;

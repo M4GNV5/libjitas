@@ -67,6 +67,6 @@ bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg);
 int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
 
 int jitas_assemble(uint8_t *ptr, const char *str);
-char *jitas_error();
+char *jitas_error(int *line);
 
 #endif
