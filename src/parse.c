@@ -191,8 +191,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		if(len == 0)
 		{
 			buff[31] = 0;
-			errbuff = malloc(128);
-			sprintf(errbuff, "Unexpected '%s'", buff);
+			asprintf(&errbuff, "Unexpected '%s'", buff);
 		 	jitas_addError(ctx, errbuff, line);
 			skipToNewline(&str);
 			continue;
@@ -202,8 +201,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		argStart = str;
 		if(!parseArg(&str, &arg0))
 		{
-			errbuff = malloc(64 + str - argStart);
-			sprintf(errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
+			asprintf(&errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
 			jitas_addError(ctx, errbuff, line);
 			skipToNewline(&str);
 			continue;
@@ -217,8 +215,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			argStart = str;
 			if(!parseArg(&str, &arg1))
 			{
-				errbuff = malloc(64 + str - argStart);
-				sprintf(errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
+				asprintf(&errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
 				jitas_addError(ctx, errbuff, line);
 				skipToNewline(&str);
 				continue;
@@ -256,8 +253,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 					arg1.size = 8;
 					break;
 				default:
-					errbuff = malloc(64);
-					sprintf(errbuff, "Instruction requires size suffix");
+					asprintf(&errbuff, "Instruction requires size suffix");
 					jitas_addError(ctx, errbuff, line);
 					skipToNewline(&str);
 					continue;
@@ -278,8 +274,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		skipSpaces(&str);
 		if(*str != '\n' && *str != 0)
 		{
-			errbuff = malloc(128);
-			sprintf(errbuff, "Expected line end at line %d", line);
+			asprintf(&errbuff, "Expected line end at line %d", line);
 		 	jitas_addError(ctx, errbuff, line);
 			skipToNewline(&str);
 			continue;
@@ -314,12 +309,11 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			{
 				if(last != src->size && last != dst->size)
 				{
-					errbuff = malloc(128);
 					if(src->size == dst->size)
-						sprintf(errbuff, "Instruction suffix is for size %d but arguments have size %d",
+						asprintf(&errbuff, "Instruction suffix is for size %d but arguments have size %d",
 							last, src->size);
 					else
-						sprintf(errbuff, "Instruction suffix is for size %d but arguments have size %d/%d",
+						asprintf(&errbuff, "Instruction suffix is for size %d but arguments have size %d/%d",
 							last, src->size, dst->size);
 
 					jitas_addError(ctx, errbuff, line);
@@ -348,6 +342,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 
 bool jitas_link(jitas_context_t *ctx, void *data)
 {
+	char *err;
 	jitas_symboltable_t *curr = ctx->symbols;
 	while(curr != NULL)
 	{
@@ -356,16 +351,14 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 
 		if(resolved == NULL)
 		{
-			char *err = malloc(64);
-			sprintf(err, "Symbol resolver returned NULL for symbol '%s'", curr->symbol);
+			asprintf(&err, "Symbol resolver returned NULL for symbol '%s'", curr->symbol);
 			jitas_addError(ctx, err, -1);
 			return false;
 		}
 		else if((curr->size == 1 && (diff < INT8_MIN || diff > INT8_MAX))
 			|| (curr->size == 4 && (diff < INT32_MIN || diff > INT32_MAX)))
 		{
-			char *err = malloc(256);
-			sprintf(err, "Distance to symbol '%s' is too far for a rel%s jump/call",
+			asprintf(&err, "Distance to symbol '%s' is too far for a rel%s jump/call",
 				curr->symbol, curr->size == 1 ? "8" : "32");
 			jitas_addError(ctx, err, -1);
 			return false;
