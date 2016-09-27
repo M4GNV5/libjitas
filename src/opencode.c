@@ -60,10 +60,10 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		*ptr++ = 0x66;
 
 	uint8_t *rexPtr = ptr;
-	if(src->needsRex || dst->needsRex)
+	if(src->needsRex || dst->needsRex || (ins->size == JITAS_SIZE_ANY && (src->size == 8 || dst->size == 8)))
 	{
 		*ptr = 0x40;
-		if(src->size == 8 || dst->size == 8)
+		if(ins->size == JITAS_SIZE_ANY && (src->size == 8 || dst->size == 8))
 			*ptr |= 0b1000;
 		ptr++;
 	}
