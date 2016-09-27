@@ -260,10 +260,45 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 			dst = &arg0;
 		}
 
-		if(arg0.size == 0 && arg1.size != 0)
+		if(arg0.size == 0 && arg1.size == 0)
+		{
+			switch(buff[len - 1])
+			{
+				case 'b':
+					arg0.size = 1;
+					arg1.size = 1;
+					break;
+				case 'w':
+					arg0.size = 2;
+					arg1.size = 2;
+					break;
+				case 'l':
+					arg0.size = 4;
+					arg1.size = 4;
+					break;
+				case 'q':
+					arg0.size = 8;
+					arg1.size = 8;
+					break;
+				default:
+					errbuff = malloc(64);
+					sprintf(errbuff, "Instruction requires size suffix\n");
+					addError(errbuff);
+					skipToNewline(&str);
+					continue;
+			}
+
+			buff[len - 1] = 0;
+		}
+		else if(arg0.size == 0 && arg1.size != 0)
+		{
 			arg0.size = arg1.size;
+		}
 		else if(arg0.size != 0 && arg1.size == 0)
+		{
 			arg1.size = arg0.size;
+		}
+
 
 		skipSpaces(&str);
 		if(*str != '\n' && *str != 0)
@@ -281,9 +316,47 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 		ins = jitas_findInstruction(buff, src, dst);
 		if(ins == NULL)
 		{
-			addError(jitas_errorMsg(buff, src, dst));
-			skipToNewline(&str);
-			continue;
+			char last = buff[len - 1];
+			switch(last)
+			{
+				case 'b':
+					last = 1;
+					break;
+				case 'w':
+					last = 2;
+					break;
+				case 'l':
+					last = 4;
+					break;
+				case 'q':
+					last = 8;
+					break;
+				default:
+					last = 0;
+			}
+
+			if(last != 0)
+			{
+				if(last != src->size && last != dst->size)
+				{
+					errbuff = malloc(128);
+					sprintf(errbuff, "Instruction size suffix is for size %d but arguments have size %d and %d",
+						last, src->size, dst->size);
+					addError(errbuff);
+					skipToNewline(&str);
+					continue;
+				}
+
+				buff[len - 1] = 0;
+				ins = jitas_findInstruction(buff, src, dst);
+			}
+
+			if(ins == NULL)
+			{
+				addError(jitas_errorMsg(buff, src, dst));
+				skipToNewline(&str);
+				continue;
+			}
 		}
 
 		len = jitas_encode(ptr, ins, src, dst);
