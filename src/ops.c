@@ -195,5 +195,11 @@ jitas_instruction_t jitas_instructions[] = {
 	{"pop", 1, {0x8F, 0}, JITAS_SIZE_PTR, JITAS_ARG_NONE, JITAS_ARG_MODRM},
 	{NULL, 1, {0x50}, JITAS_SIZE_PTR, JITAS_ARG_NONE, JITAS_ARG_REG},
 	//... pop segment register
+
+	{"int3", 1, {0xCC}, JITAS_SIZE_BYTE, JITAS_ARG_NONE, JITAS_ARG_NONE},
+	{"int", 1, {0xCD}, JITAS_SIZE_BYTE, JITAS_ARG_NONE, JITAS_ARG_IMM},
+
+	{"sysenter", 2, {0x0F, 0x34}, JITAS_SIZE_BYTE, JITAS_ARG_NONE, JITAS_ARG_NONE},
+	{"syscall", 2, {0x0F, 0x05}, JITAS_SIZE_BYTE, JITAS_ARG_NONE, JITAS_ARG_NONE},
 };
 int jitas_instructionCount = sizeof(jitas_instructions) / sizeof(jitas_instruction_t);
