@@ -353,7 +353,6 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 							last, src->size, dst->size);
 
 					addError(errbuff, line);
-					skipToNewline(&str);
 					continue;
 				}
 
