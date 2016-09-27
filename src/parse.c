@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "jitas.h"
 
@@ -139,10 +141,16 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 				if(curr != ')')
 					return false;
 			}
-			/*else if(isalpha(**str))
+			else if(isalpha(**str))
 			{
-				//TODO label
-			}*/
+				if(parseIdentifier(str, buff, 128) == 0)
+					return false;
+
+				arg->type = JITAS_ARG_SYMBOL;
+				arg->size = 8;
+				arg->needsRex = false;
+				arg->symbol = strdup(buff);
+			}
 			else
 			{
 				return false;
@@ -193,7 +201,7 @@ char *jitas_error(int *line)
 	return msg;
 }
 
-int jitas_assemble(uint8_t *ptr, const char *str)
+int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
 {
 	char *errbuff;
 	char buff[32];
@@ -368,9 +376,47 @@ int jitas_assemble(uint8_t *ptr, const char *str)
 			}
 		}
 
-		len = jitas_encode(ptr, ins, src, dst);
+		len = jitas_encode(ptr, symbols, ins, src, dst);
 		byteCount += len;
 		ptr += len;
 	}
 	return byteCount;
+}
+
+bool jitas_link(jitas_symboltable_t *curr, jitas_symbolresolver_t func, void *data)
+{
+	while(curr != NULL)
+	{
+		uint8_t *resolved = func(curr->symbol, data);
+		ptrdiff_t diff = resolved - curr->nextInsPtr;
+
+		if(resolved == NULL)
+		{
+			char *err = malloc(64);
+			sprintf(err, "Symbol resolver returned NULL for symbol '%s'", curr->symbol);
+			addError(err, -1);
+			return false;
+		}
+		else if((curr->size == 1 && (diff < INT8_MIN || diff > INT8_MAX))
+			|| (curr->size == 4 && (diff < INT32_MIN || diff > INT32_MAX)))
+		{
+			char *err = malloc(256);
+			sprintf(err, "Distance to symbol '%s' is too far for a rel%s jump/call",
+				curr->symbol, curr->size == 1 ? "8" : "32");
+			addError(err, -1);
+			return false;
+		}
+
+		if(curr->size == 1)
+		{
+			*(curr->ptr) = diff;
+		}
+		else if(curr->size == 4)
+		{
+			*(int32_t *)(curr->ptr) = diff;
+		}
+
+		curr = curr->next;
+	}
+	return true;
 }

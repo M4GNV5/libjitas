@@ -3,10 +3,16 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <dlfcn.h>
 
 #include "src/jitas.h"
 
 typedef intptr_t (*asmfunc)(int argc, char **argv);
+
+void *symbolresolve_dlfcn(const char *symbol, void *data)
+{
+	return dlsym(NULL, symbol);
+}
 
 int main(int argc, char **argv)
 {
@@ -41,27 +47,31 @@ int main(int argc, char **argv)
 	uint8_t *buff = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 	//assemble the assembly code from the file into said memory region
-	int len = jitas_assemble(buff, str);
+	jitas_symboltable_t *symbols = NULL;
+	int len = jitas_assemble(buff, &symbols, str);
+	bool linkSuccess = jitas_link(symbols, symbolresolve_dlfcn, NULL);
 
 	//output all assembly errors
 	for(;;)
 	{
-		char *err = jitas_error();
+		int line;
+		char *err = jitas_error(&line);
 		if(err == NULL)
 			break;
 
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "line %d: %s\n", line, err);
 		free(err);
 	}
 
-	//if jitas_assemble returns 0 there was an error
-	if(len == 0)
+	//if jitas_assemble returns 0 when there was an error
+	if(!linkSuccess || len == 0)
 		return 1;
 
-	for(int i = 0; i < len; i++)
+	/*for(int i = 0; i < len; i++)
 		printf("%02hhX ", buff[i]);
-	printf("\n");
+	printf("\n");*/
 
+	//call the assembled instructions like a function
 	asmfunc func = (void *)buff;
 	return func(argc, argv);
 }

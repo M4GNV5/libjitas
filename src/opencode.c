@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "jitas.h"
 
 typedef struct
@@ -14,7 +16,8 @@ typedef struct
 	uint8_t scale : 2;
 } __attribute__((packed)) sib_byte_t;
 
-static int jitas_placeArg(uint8_t *ptr, jitas_argtype_t opArg, jitas_argument_t *arg)
+static int jitas_placeArg(uint8_t *ptr, uint8_t *startPtr,
+	jitas_symboltable_t **symbols, jitas_argtype_t opArg, jitas_argument_t *arg)
 {
 	if(opArg == JITAS_ARG_IMM8)
 	{
@@ -25,6 +28,22 @@ static int jitas_placeArg(uint8_t *ptr, jitas_argtype_t opArg, jitas_argument_t 
 	{
 		*(int16_t *)ptr = arg->imm;
 		return 2;
+	}
+	else if(opArg == JITAS_ARG_REL8 || opArg == JITAS_ARG_REL32)
+	{
+		jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
+		entry->size = opArg == JITAS_ARG_REL8 ? 1 : 4;
+		entry->symbol = arg->symbol;
+		entry->nextInsPtr = ptr + entry->size; //TODO is this correct for all instructions?
+		entry->ptr = ptr;
+		entry->next = *symbols;
+		*symbols = entry;
+
+		if(opArg == JITAS_ARG_REL8)
+			*ptr = 0;
+		else
+			*(int32_t *)ptr = 0;
+		return entry->size;
 	}
 	else if(opArg == JITAS_ARG_IMM || opArg == JITAS_ARG_IMM_MAX32)
 	{
@@ -52,7 +71,8 @@ static int jitas_placeArg(uint8_t *ptr, jitas_argtype_t opArg, jitas_argument_t 
 	}
 }
 
-int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst)
+int jitas_encode(uint8_t *ptr, jitas_symboltable_t **symbols,
+	jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst)
 {
 	uint8_t *startPtr = ptr;
 
@@ -110,7 +130,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(dst->needsRex && dst->mem.base > 7)
 			*rexPtr |= 0b0001;
 
-		if(dst->mem.scale == 0 && (dst->mem.base & 7) != 4)
+		if(dst->mem.scale == 0 || (dst->type == JITAS_ARG_MODRM && (dst->mem.base & 7) != 4))
 		{
 			modrm.rm = dst->mem.base & 7;
 			*ptr++ = *(uint8_t *)&modrm;
@@ -163,7 +183,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 			*(int32_t *)ptr++ = dst->mem.offset; //modrm {mod 0, rm 5} is disp32(%rip)
 
 		if(srcType != JITAS_ARG_REG)
-			ptr += jitas_placeArg(ptr, srcType, src);
+			ptr += jitas_placeArg(ptr, startPtr, symbols, srcType, src);
 
 		return ptr - startPtr;
 	}
@@ -177,7 +197,7 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(src->needsRex && src->mem.base > 7)
 			*rexPtr |= 0b0001;
 
-		return ptr - startPtr + jitas_placeArg(ptr, ins->destination, dst);
+		return ptr - startPtr + jitas_placeArg(ptr, startPtr, symbols, ins->destination, dst);
 	}
 	else if(ins->destination == JITAS_ARG_REG)
 	{
@@ -189,13 +209,13 @@ int jitas_encode(uint8_t *ptr, jitas_instruction_t *ins, jitas_argument_t *src, 
 		if(dst->needsRex && dst->mem.base > 7)
 			*rexPtr |= 0b0001;
 
-		return ptr - startPtr + jitas_placeArg(ptr, ins->source, src);
+		return ptr - startPtr + jitas_placeArg(ptr, startPtr, symbols, ins->source, src);
 	}
 	else
 	{
 		int size = ptr - startPtr;
-		size += jitas_placeArg(ptr, ins->source, src);
-		size += jitas_placeArg(ptr, ins->destination, dst);
+		size += jitas_placeArg(ptr, startPtr, symbols, ins->source, src);
+		size += jitas_placeArg(ptr, startPtr, symbols, ins->destination, dst);
 
 		return size;
 	}
