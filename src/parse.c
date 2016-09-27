@@ -159,48 +159,6 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 	return true;
 }
 
-struct errorlist
-{
-	char *msg;
-	int line;
-	struct errorlist *next;
-};
-static struct errorlist *firstError = NULL;
-static struct errorlist *lastError = NULL;
-
-static void addError(char *msg, int line)
-{
-	struct errorlist *curr = malloc(sizeof(struct errorlist));
-
-	curr->msg = msg;
-	curr->line = line;
-	curr->next = NULL;
-	if(lastError == NULL)
-		firstError = curr;
-	else
-		lastError->next = curr;
-
-	lastError = curr;
-}
-
-char *jitas_error(int *line)
-{
-	if(firstError == NULL)
-		return NULL;
-
-	struct errorlist *curr = firstError;
-	firstError = firstError->next;
-	if(firstError == NULL)
-		lastError = NULL;
-
-	char *msg = curr->msg;
-	if(line != NULL)
-		*line = curr->line;
-
-	free(curr);
-	return msg;
-}
-
 int jitas_assemble(jitas_context_t *ctx, const char *str)
 {
 	char *errbuff;
@@ -214,6 +172,8 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 	int line = 0;
 
 	ctx->symbols = NULL;
+	ctx->firstError = NULL;
+	ctx->lastError = NULL;
 	uint8_t *startPtr = ctx->ptr;
 
 	while(*str != 0)
@@ -233,7 +193,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			buff[31] = 0;
 			errbuff = malloc(128);
 			sprintf(errbuff, "Unexpected '%s'", buff);
-		 	addError(errbuff, line);
+		 	jitas_addError(ctx, errbuff, line);
 			skipToNewline(&str);
 			continue;
 		}
@@ -244,7 +204,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		{
 			errbuff = malloc(64 + str - argStart);
 			sprintf(errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
-			addError(errbuff, line);
+			jitas_addError(ctx, errbuff, line);
 			skipToNewline(&str);
 			continue;
 		}
@@ -259,7 +219,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			{
 				errbuff = malloc(64 + str - argStart);
 				sprintf(errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
-				addError(errbuff, line);
+				jitas_addError(ctx, errbuff, line);
 				skipToNewline(&str);
 				continue;
 			}
@@ -298,7 +258,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 				default:
 					errbuff = malloc(64);
 					sprintf(errbuff, "Instruction requires size suffix");
-					addError(errbuff, line);
+					jitas_addError(ctx, errbuff, line);
 					skipToNewline(&str);
 					continue;
 			}
@@ -320,7 +280,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		{
 			errbuff = malloc(128);
 			sprintf(errbuff, "Expected line end at line %d", line);
-		 	addError(errbuff, line);
+		 	jitas_addError(ctx, errbuff, line);
 			skipToNewline(&str);
 			continue;
 		}
@@ -362,7 +322,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 						sprintf(errbuff, "Instruction suffix is for size %d but arguments have size %d/%d",
 							last, src->size, dst->size);
 
-					addError(errbuff, line);
+					jitas_addError(ctx, errbuff, line);
 					continue;
 				}
 
@@ -372,7 +332,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 
 			if(ins == NULL)
 			{
-				addError(jitas_errorMsg(buff, src, dst), line);
+				jitas_addError(ctx, jitas_errorMsg(buff, src, dst), line);
 				skipToNewline(&str);
 				continue;
 			}
@@ -398,7 +358,7 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 		{
 			char *err = malloc(64);
 			sprintf(err, "Symbol resolver returned NULL for symbol '%s'", curr->symbol);
-			addError(err, -1);
+			jitas_addError(ctx, err, -1);
 			return false;
 		}
 		else if((curr->size == 1 && (diff < INT8_MIN || diff > INT8_MAX))
@@ -407,7 +367,7 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 			char *err = malloc(256);
 			sprintf(err, "Distance to symbol '%s' is too far for a rel%s jump/call",
 				curr->symbol, curr->size == 1 ? "8" : "32");
-			addError(err, -1);
+			jitas_addError(ctx, err, -1);
 			return false;
 		}
 

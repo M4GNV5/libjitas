@@ -105,3 +105,43 @@ char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t 
 	sprintf(buff, "Unknown instruction '%s'", label);
 	return buff;
 }
+
+struct errorlist
+{
+	char *msg;
+	int line;
+	struct errorlist *next;
+};
+
+void jitas_addError(jitas_context_t *ctx, char *msg, int line)
+{
+	struct errorlist *curr = malloc(sizeof(struct errorlist));
+
+	curr->msg = msg;
+	curr->line = line;
+	curr->next = NULL;
+	if(ctx->lastError == NULL)
+		ctx->firstError = curr;
+	else
+		ctx->lastError->next = curr;
+
+	ctx->lastError = curr;
+}
+
+char *jitas_error(jitas_context_t *ctx, int *line)
+{
+	if(ctx->firstError == NULL)
+		return NULL;
+
+	struct errorlist *curr = ctx->firstError;
+	ctx->firstError = curr->next;
+	if(ctx->firstError == NULL)
+		ctx->lastError = NULL;
+
+	char *msg = curr->msg;
+	if(line != NULL)
+		*line = curr->line;
+
+	free(curr);
+	return msg;
+}

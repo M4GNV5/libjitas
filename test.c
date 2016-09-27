@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 	for(;;)
 	{
 		int line;
-		char *err = jitas_error(&line);
+		char *err = jitas_error(&ctx, &line);
 		if(err == NULL)
 			break;
 

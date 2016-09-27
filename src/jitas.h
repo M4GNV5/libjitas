@@ -75,6 +75,8 @@ typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 typedef struct
 {
 	uint8_t *ptr;
+	struct errorlist *firstError;
+	struct errorlist *lastError;
 	jitas_symboltable_t *symbols;
 	jitas_symbolresolver_t resolver;
 } jitas_context_t;
@@ -87,9 +89,10 @@ char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t 
 bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *needsRex);
 bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg);
 void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
+void jitas_addError(jitas_context_t *ctx, char *msg, int line);
 
 int jitas_assemble(jitas_context_t *ctx, const char *str);
 bool jitas_link(jitas_context_t *ctx, void *data);
-char *jitas_error(int *line);
+char *jitas_error(jitas_context_t *ctx, int *line);
 
 #endif
