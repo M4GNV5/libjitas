@@ -44,7 +44,7 @@ static int convertSize(int size)
 	return 0;
 }
 
-char *jitas_errorMsg(const char *label, jitas_argument_t *src, jitas_argument_t *dst)
+char *jitas_findInstructionError(const char *label, jitas_argument_t *src, jitas_argument_t *dst)
 {
 	for(int i = 0; i < jitas_instructionCount;)
 	{

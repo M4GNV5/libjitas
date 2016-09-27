@@ -332,7 +332,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 
 			if(ins == NULL)
 			{
-				jitas_addError(ctx, jitas_errorMsg(buff, src, dst), line);
+				jitas_addError(ctx, jitas_findInstructionError(buff, src, dst), line);
 				skipToNewline(&str);
 				continue;
 			}
