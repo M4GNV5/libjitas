@@ -201,13 +201,8 @@ char *jitas_error(int *line)
 	return msg;
 }
 
-int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
+int jitas_assemble(jitas_context_t *ctx, const char *str)
 {
-	jitas_context_t ctx;
-	ctx.startPtr = ctx.ptr = ptr;
-	ctx.error = NULL;
-	ctx.symbols = NULL;
-
 	char *errbuff;
 	char buff[32];
 	const char *argStart;
@@ -217,6 +212,9 @@ int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
 	jitas_argument_t *dst;
 	jitas_instruction_t *ins;
 	int line = 0;
+
+	ctx->symbols = NULL;
+	uint8_t *startPtr = ctx->ptr;
 
 	while(*str != 0)
 	{
@@ -380,18 +378,20 @@ int jitas_assemble(uint8_t *ptr, jitas_symboltable_t **symbols, const char *str)
 			}
 		}
 
-		jitas_encode(&ctx, ins, src, dst);
+		jitas_encode(ctx, ins, src, dst);
 	}
 
-	*symbols = ctx.symbols;
-	return ctx.ptr - ctx.startPtr;
+	int len = ctx->ptr - startPtr;
+	ctx->ptr = startPtr;
+	return len;
 }
 
-bool jitas_link(jitas_symboltable_t *curr, jitas_symbolresolver_t func, void *data)
+bool jitas_link(jitas_context_t *ctx, void *data)
 {
+	jitas_symboltable_t *curr = ctx->symbols;
 	while(curr != NULL)
 	{
-		uint8_t *resolved = func(curr->symbol, data);
+		uint8_t *resolved = ctx->resolver(curr->symbol, data);
 		ptrdiff_t diff = resolved - curr->nextInsPtr;
 
 		if(resolved == NULL)

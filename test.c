@@ -47,9 +47,11 @@ int main(int argc, char **argv)
 	uint8_t *buff = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 	//assemble the assembly code from the file into said memory region
-	jitas_symboltable_t *symbols = NULL;
-	int len = jitas_assemble(buff, &symbols, str);
-	bool linkSuccess = jitas_link(symbols, symbolresolve_dlfcn, NULL);
+	jitas_context_t ctx;
+	ctx.ptr = buff;
+	ctx.resolver = symbolresolve_dlfcn;
+	int len = jitas_assemble(&ctx, str);
+	bool linkSuccess = jitas_link(&ctx, NULL);
 
 	//output all assembly errors
 	for(;;)
@@ -67,9 +69,9 @@ int main(int argc, char **argv)
 	if(!linkSuccess || len == 0)
 		return 1;
 
-	/*for(int i = 0; i < len; i++)
+	for(int i = 0; i < len; i++)
 		printf("%02hhX ", buff[i]);
-	printf("\n");*/
+	printf("\n");
 
 	//call the assembled instructions like a function
 	asmfunc func = (void *)buff;
