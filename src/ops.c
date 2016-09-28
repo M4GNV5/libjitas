@@ -28,9 +28,11 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 			return true;
 		if(opArg == JITAS_ARG_IMM_MAX32 && arg->imm >= INT32_MIN && arg->imm <= INT32_MAX)
 			return true;
+		if(arg->size == 0)
+			return false;
 	}
 	else if((ins->size == JITAS_SIZE_BYTE && arg->size != 1)
-			|| (ins->size == JITAS_SIZE_ANY && arg->size == 1)
+			|| (ins->size == JITAS_SIZE_ANY && arg->size <= 1)
 			|| (ins->size == JITAS_SIZE_PTR && arg->size != sizeof(void *)))
 	{
 		return false;
