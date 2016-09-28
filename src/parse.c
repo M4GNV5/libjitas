@@ -159,6 +159,42 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 	return true;
 }
 
+static void hacky8ByteWorkaround(jitas_context_t *ctx, char *ins, jitas_argument_t *arg)
+{
+	if(sizeof(void *) != 8)
+		return;
+
+	jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
+	entry->size = 8;
+	entry->symbol = arg->symbol;
+	entry->next = ctx->symbols;
+	ctx->symbols = entry;
+
+	//XXX workaround for 64bit addresses
+	*ctx->ptr++ = 0x49; //rex.WB
+	*ctx->ptr++ = 0xBB; //mov -> %r11
+	entry->ptr = ctx->ptr;
+
+	*(uint64_t *)ctx->ptr = 0;
+	ctx->ptr += 8;
+	entry->nextInsPtr = ctx->ptr;
+
+	if(strcmp(ins, "jmp") == 0 || strcmp(ins, "call") == 0)
+	{
+		arg->type = JITAS_ARG_REG;
+		arg->size = 8;
+	}
+	else
+	{
+		arg->type = JITAS_ARG_MODRM;
+	}
+
+	arg->needsRex = true;
+	arg->mem.base = 11;
+	arg->mem.offset = 0;
+	arg->mem.scale = 0;
+}
+
 int jitas_assemble(jitas_context_t *ctx, const char *str)
 {
 	char *errbuff;
@@ -227,9 +263,21 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		else
 		{
 			arg1.type = JITAS_ARG_NONE;
+			arg1.needsRex = false;
 			arg1.size = 0;
 			src = &arg1;
 			dst = &arg0;
+		}
+
+		//XXX hacky 8 byte address workaround for all symbol uses except conditional jumps
+		//this places the absolute address into %r11 and replaces the symbol argument with (%r11)
+		if((src->type == JITAS_ARG_SYMBOL || dst->type == JITAS_ARG_SYMBOL)
+			&& (buff[0] != 'j' || strcmp(buff, "jmp") == 0))
+		{
+			if(src->type == JITAS_ARG_SYMBOL)
+				hacky8ByteWorkaround(ctx, buff, src);
+			else if(dst->type == JITAS_ARG_SYMBOL)
+				hacky8ByteWorkaround(ctx, buff, dst);
 		}
 
 		if(arg0.size == 0 && arg1.size == 0)
@@ -364,13 +412,23 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 			return false;
 		}
 
-		if(curr->size == 1)
+		switch(curr->size)
 		{
-			*(curr->ptr) = diff;
-		}
-		else if(curr->size == 4)
-		{
-			*(int32_t *)(curr->ptr) = diff;
+			case 1:
+				*curr->ptr = diff;
+				break;
+			case 2:
+				*(int16_t *)curr->ptr = diff; //is this used/needed anywhere?
+				break;
+			case 4:
+				*(int32_t *)curr->ptr = diff;
+				break;
+			case 8:
+				*(void **)curr->ptr = resolved;
+				break;
+			default:
+				asprintf(&err, "Cannot link symbol of size %d\n", curr->size);
+				jitas_addError(ctx, err, -1);
 		}
 
 		curr = curr->next;
