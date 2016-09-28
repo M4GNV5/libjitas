@@ -159,6 +159,86 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 	return true;
 }
 
+static int sizeFromSuffix(char suffix)
+{
+	switch(suffix)
+	{
+		case 'b':
+			return 1;
+		case 'w':
+			return 2;
+		case 'l':
+			return 4;
+		case 'q':
+			return 8;
+	}
+	return -1;
+}
+
+static jitas_instruction_t *adjustSizeAndFindInstruction(jitas_context_t *ctx, int len, char *buff,
+	jitas_argument_t *src, jitas_argument_t *dst)
+{
+	jitas_instruction_t *ins;
+	char *errbuff;
+
+	ins = jitas_findInstruction(buff, src, dst);
+	if(ins != NULL)
+	{
+		//size mismatches are probably okay here
+	}
+	else if(src->size == 0 && dst->size == 0)
+	{
+		int size = sizeFromSuffix(buff[len - 1]);
+		if(size < 0)
+		{
+			asprintf(&errbuff, "Instruction requires size suffix");
+			jitas_addError(ctx, errbuff, ctx->line);
+			return NULL;
+		}
+
+		src->size = size;
+		dst->size = size;
+		buff[len - 1] = 0;
+	}
+	else if(src->size == 0 && dst->size != 0)
+	{
+		src->size = dst->size;
+	}
+	else if(src->size != 0 && dst->size == 0)
+	{
+		dst->size = src->size;
+	}
+
+	ins = jitas_findInstruction(buff, src, dst);
+	if(ins == NULL)
+	{
+		int size = sizeFromSuffix(buff[len - 1]);
+		if(size > 0)
+		{
+			if(size != src->size && size != dst->size)
+			{
+				if(src->size == dst->size)
+					asprintf(&errbuff, "Instruction suffix is for size %d but arguments have size %d",
+						size, src->size);
+				else
+					asprintf(&errbuff, "Instruction suffix is for size %d but arguments have size %d/%d",
+						size, src->size, dst->size);
+
+				jitas_addError(ctx, errbuff, ctx->line);
+				return NULL;
+			}
+
+			buff[len - 1] = 0;
+			ins = jitas_findInstruction(buff, src, dst);
+		}
+
+		if(ins == NULL)
+			jitas_addError(ctx, jitas_findInstructionError(buff, src, dst), ctx->line);
+	}
+
+	return ins;
+}
+
 static void hacky8ByteWorkaround(jitas_context_t *ctx, char *ins, jitas_argument_t *arg)
 {
 	if(sizeof(void *) != 8)
@@ -205,8 +285,8 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 	jitas_argument_t *src;
 	jitas_argument_t *dst;
 	jitas_instruction_t *ins;
-	int line = 0;
 
+	ctx->line = 0;
 	ctx->symbols = NULL;
 	ctx->firstError = NULL;
 	ctx->lastError = NULL;
@@ -222,13 +302,13 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			continue;
 		}
 
-		line++;
+		ctx->line++;
 		int len = parseIdentifier(&str, buff, 32);
 		if(len == 0)
 		{
 			buff[31] = 0;
 			asprintf(&errbuff, "Unexpected '%s'", buff);
-		 	jitas_addError(ctx, errbuff, line);
+		 	jitas_addError(ctx, errbuff, ctx->line);
 			skipToNewline(&str);
 			continue;
 		}
@@ -238,7 +318,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		if(!parseArg(&str, &arg0))
 		{
 			asprintf(&errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
-			jitas_addError(ctx, errbuff, line);
+			jitas_addError(ctx, errbuff, ctx->line);
 			skipToNewline(&str);
 			continue;
 		}
@@ -252,7 +332,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			if(!parseArg(&str, &arg1))
 			{
 				asprintf(&errbuff, "Invalid argument '%.*s'", (int)(str - argStart), argStart);
-				jitas_addError(ctx, errbuff, line);
+				jitas_addError(ctx, errbuff, ctx->line);
 				skipToNewline(&str);
 				continue;
 			}
@@ -269,6 +349,18 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 			dst = &arg0;
 		}
 
+		skipSpaces(&str);
+		if(*str != '\n' && *str != 0)
+		{
+			asprintf(&errbuff, "Expected line end at line %d", ctx->line);
+		 	jitas_addError(ctx, errbuff, ctx->line);
+			skipToNewline(&str);
+			continue;
+		}
+
+		if(*str != 0)
+			str++;
+
 		//XXX hacky 8 byte address workaround for all symbol uses except conditional jumps
 		//this places the absolute address into %r11 and replaces the symbol argument with (%r11)
 		if((src->type == JITAS_ARG_SYMBOL || dst->type == JITAS_ARG_SYMBOL)
@@ -280,105 +372,9 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 				hacky8ByteWorkaround(ctx, buff, dst);
 		}
 
-		if(arg0.size == 0 && arg1.size == 0)
-		{
-			switch(buff[len - 1])
-			{
-				case 'b':
-					arg0.size = 1;
-					arg1.size = 1;
-					break;
-				case 'w':
-					arg0.size = 2;
-					arg1.size = 2;
-					break;
-				case 'l':
-					arg0.size = 4;
-					arg1.size = 4;
-					break;
-				case 'q':
-					arg0.size = 8;
-					arg1.size = 8;
-					break;
-				default:
-					asprintf(&errbuff, "Instruction requires size suffix");
-					jitas_addError(ctx, errbuff, line);
-					skipToNewline(&str);
-					continue;
-			}
-
-			buff[len - 1] = 0;
-		}
-		else if(arg0.size == 0 && arg1.size != 0)
-		{
-			arg0.size = arg1.size;
-		}
-		else if(arg0.size != 0 && arg1.size == 0)
-		{
-			arg1.size = arg0.size;
-		}
-
-
-		skipSpaces(&str);
-		if(*str != '\n' && *str != 0)
-		{
-			asprintf(&errbuff, "Expected line end at line %d", line);
-		 	jitas_addError(ctx, errbuff, line);
-			skipToNewline(&str);
-			continue;
-		}
-
-		if(*str != 0)
-			str++;
-
-		ins = jitas_findInstruction(buff, src, dst);
+		ins = adjustSizeAndFindInstruction(ctx, len, buff, src, dst);
 		if(ins == NULL)
-		{
-			char last = buff[len - 1];
-			switch(last)
-			{
-				case 'b':
-					last = 1;
-					break;
-				case 'w':
-					last = 2;
-					break;
-				case 'l':
-					last = 4;
-					break;
-				case 'q':
-					last = 8;
-					break;
-				default:
-					last = 0;
-			}
-
-			if(last != 0)
-			{
-				if(last != src->size && last != dst->size)
-				{
-					if(src->size == dst->size)
-						asprintf(&errbuff, "Instruction suffix is for size %d but arguments have size %d",
-							last, src->size);
-					else
-						asprintf(&errbuff, "Instruction suffix is for size %d but arguments have size %d/%d",
-							last, src->size, dst->size);
-
-					jitas_addError(ctx, errbuff, line);
-					continue;
-				}
-
-				buff[len - 1] = 0;
-				ins = jitas_findInstruction(buff, src, dst);
-			}
-
-			if(ins == NULL)
-			{
-				jitas_addError(ctx, jitas_findInstructionError(buff, src, dst), line);
-				skipToNewline(&str);
-				continue;
-			}
-		}
+			continue;
 
 		jitas_encode(ctx, ins, src, dst);
 	}

@@ -16,7 +16,7 @@ typedef struct
 	uint8_t scale : 2;
 } __attribute__((packed)) sib_byte_t;
 
-static void jitas_placeArg(jitas_context_t *ctx, jitas_argtype_t opArg, jitas_argument_t *arg)
+static void jitas_placeArg(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argtype_t opArg, jitas_argument_t *arg)
 {
 	if(opArg == JITAS_ARG_IMM8)
 	{
@@ -46,6 +46,25 @@ static void jitas_placeArg(jitas_context_t *ctx, jitas_argtype_t opArg, jitas_ar
 	else if(opArg == JITAS_ARG_IMM || opArg == JITAS_ARG_IMM_MAX32)
 	{
 		int size = arg->size > 4 && opArg == JITAS_ARG_IMM_MAX32 ? 4 : arg->size;
+		if(size == 0)
+		{
+			switch(ins->size)
+			{
+				case JITAS_SIZE_BYTE:
+					size = 1;
+					break;
+				case JITAS_SIZE_ANY:
+					size = 4; //TODO cause an error here instead?
+					break;
+				case JITAS_SIZE_PTR:
+					size = 8;
+					break;
+				case JITAS_SIZE_IGNORE:
+					//TODO cause an error here
+					break;
+			}
+		}
+
 		switch(size)
 		{
 			case 1:
@@ -124,7 +143,7 @@ void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument
 			ctx->ptr += 4;
 
 			if(srcType != JITAS_ARG_REG)
-				jitas_placeArg(ctx, srcType, src);
+				jitas_placeArg(ctx, ins, srcType, src);
 
 			entry->nextInsPtr = ctx->ptr;
 		}
@@ -194,7 +213,7 @@ void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument
 			}
 
 			if(srcType != JITAS_ARG_REG)
-				jitas_placeArg(ctx, srcType, src);
+				jitas_placeArg(ctx, ins, srcType, src);
 		}
 	}
 	else if(ins->source == JITAS_ARG_REG)
@@ -207,7 +226,7 @@ void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument
 		if(src->needsRex && src->mem.base > 7)
 			*rexPtr |= 0b0001;
 
-		jitas_placeArg(ctx, ins->destination, dst);
+		jitas_placeArg(ctx, ins, ins->destination, dst);
 	}
 	else if(ins->destination == JITAS_ARG_REG)
 	{
@@ -219,11 +238,11 @@ void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument
 		if(dst->needsRex && dst->mem.base > 7)
 			*rexPtr |= 0b0001;
 
-		jitas_placeArg(ctx, ins->source, src);
+		jitas_placeArg(ctx, ins, ins->source, src);
 	}
 	else
 	{
-		jitas_placeArg(ctx, ins->source, src);
-		jitas_placeArg(ctx, ins->destination, dst);
+		jitas_placeArg(ctx, ins, ins->source, src);
+		jitas_placeArg(ctx, ins, ins->destination, dst);
 	}
 }

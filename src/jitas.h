@@ -75,6 +75,7 @@ typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 
 typedef struct
 {
+	int line;
 	uint8_t *ptr;
 	struct errorlist *firstError;
 	struct errorlist *lastError;
