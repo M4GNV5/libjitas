@@ -8,7 +8,7 @@ typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 
 //this is the conext struct passed to all functions
 //you have to set 'ptr' to a pointer where the assembled instructions will be written
-//and 'resolver', a function that will be used by jitas_link to resolve symbols
+//and 'resolver' to a function that will be used by jitas_link to resolve symbols
 typedef struct
 {
 	int line;
@@ -20,7 +20,7 @@ typedef struct
 	jitas_symbolresolver_t resolver;
 } jitas_context_t;
 
-//assembles a assemble code string
+//assembles a assembly code string
 //returns the count of bytes written to ctx->ptr
 //'ctx' is a context object ('ptr' should be set by you)
 //'str' is the assembly source code string
@@ -35,7 +35,7 @@ bool jitas_link(jitas_context_t *ctx, void *data);
 //assemble and link errors can be retrieved with this function
 //you probably want to call this in a loop to clear out all errors (as there can be multiple)
 //'ctx' is the context object used before with 'jitas_assemble' and/or 'jitas_link'
-//'line' is a pointer to an int that will be set to the line where the error occured
+//'line' is a pointer to an int that will be set to the line the error occured on
 char *jitas_error(jitas_context_t *ctx, int *line);
 
 //this can be used to retrieve the address of a symbol defined in assembly code
