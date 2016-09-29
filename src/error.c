@@ -8,6 +8,8 @@ static const char *argTypeTexts[][4] = {
 	[JITAS_ARG_REG] = {"r8", "r16", "r32", "r64"},
 	[JITAS_ARG_IMM] = {"imm8", "imm16", "imm32", "imm64"},
 	[JITAS_ARG_MODRM] = {"r/m8", "r/m16", "r/m32", "r/m64"},
+	[JITAS_ARG_SYMBOL] = {"r/m8", "r/m16", "r/m32", "r/m64"},
+	[JITAS_ARG_SYMBOL_ADDRESS] = {"imm8", "imm16", "imm32", "imm64"},
 };
 
 static const char *insTypeTexts[][4] = {
