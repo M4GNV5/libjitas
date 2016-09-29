@@ -183,6 +183,7 @@ static int sizeFromSuffix(char suffix)
 			return 1;
 		case 'w':
 			return 2;
+		case 'd':
 		case 'l':
 			return 4;
 		case 'q':
