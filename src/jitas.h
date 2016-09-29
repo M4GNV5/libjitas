@@ -74,7 +74,7 @@ typedef struct jitas_symboltable
 
 typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 
-typedef struct
+typedef struct jitas_context
 {
 	int line;
 	uint8_t *ptr;
