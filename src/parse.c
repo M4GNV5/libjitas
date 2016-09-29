@@ -20,6 +20,23 @@ static void skipToNewline(const char **str)
 	} while(c != '\n' && c != 0);
 }
 
+static bool expectEol(jitas_context_t *ctx, const char **str)
+{
+	skipSpaces(str);
+	if(**str != '\n' && **str != 0)
+	{
+		char *buff;
+		asprintf(&buff, "Expected line end at line %d", ctx->line);
+		jitas_addError(ctx, buff, ctx->line);
+		skipToNewline(str);
+		return false;
+	}
+
+	if(**str != 0)
+		(*str)++;
+	return true;
+}
+
 static int parseIdentifier(const char **str, char *buff, int maxlen)
 {
 	int len = 0;
@@ -276,6 +293,53 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 
 		return false;
 	}
+	else if(buff[0] == 'd' && buff[2] == 0)
+	{
+		int size = sizeFromSuffix(buff[1]);
+		if(size != -1)
+		{
+			for(;;)
+			{
+				uint64_t val = strtoul(*str, (void *)str, 0);
+
+				switch(size)
+				{
+					case 1:
+						*(uint8_t *)ctx->ptr = val;
+						break;
+					case 2:
+						*(uint16_t *)ctx->ptr = val;
+						break;
+					case 4:
+						*(uint32_t *)ctx->ptr = val;
+						break;
+					case 8:
+						*(uint64_t *)ctx->ptr = val;
+						break;
+				}
+				ctx->ptr += size;
+
+				skipSpaces(str);
+				if(**str != ',')
+					break;
+			}
+
+			expectEol(ctx, str);
+			return false;
+		}
+	}
+	else if(strncmp(buff, "res", 3) == 0 && buff[4] == 0)
+	{
+		int size = sizeFromSuffix(buff[3]);
+		if(size != -1)
+		{
+			uint64_t count = strtoul(*str, (void *)str, 0);
+			ctx->ptr += count * size;
+
+			expectEol(ctx, str);
+			return false;
+		}
+	}
 
 	skipSpaces(str);
 	argStart = *str;
@@ -309,17 +373,5 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 		src->size = 0;
 	}
 
-	skipSpaces(str);
-	if(**str != '\n' && **str != 0)
-	{
-		asprintf(&errbuff, "Expected line end at line %d", ctx->line);
-		jitas_addError(ctx, errbuff, ctx->line);
-		skipToNewline(str);
-		return false;
-	}
-
-	if(**str != 0)
-		(*str)++;
-
-	return true;
+	return expectEol(ctx, str);
 }
