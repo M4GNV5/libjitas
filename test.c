@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	ctx.ptr = buff;
 	ctx.resolver = symbolresolve_dlfcn;
 	int len = jitas_assemble(&ctx, str);
-	bool linkSuccess = jitas_link(&ctx, NULL);
+	bool hadError = !jitas_link(&ctx, NULL);
 
 	//output all assembly errors
 	for(;;)
@@ -61,14 +61,16 @@ int main(int argc, char **argv)
 		if(err == NULL)
 			break;
 
+		hadError = true;
 		fprintf(stderr, "line %d: %s\n", line, err);
 		free(err);
 	}
 
 	//if jitas_assemble returns 0 when there was an error
-	if(!linkSuccess || len == 0)
+	if(hadError)
 		return 1;
 
+	//dump the assembled instructions
 	for(int i = 0; i < len; i++)
 		printf("%02hhX ", buff[i]);
 	printf("\n");
