@@ -86,12 +86,14 @@ typedef struct
 extern int jitas_instructionCount;
 extern jitas_instruction_t jitas_instructions[];
 
+jitas_instruction_t *jitas_findUnsizedInstruction(jitas_context_t *ctx, char *buff, jitas_argument_t *src, jitas_argument_t *dst);
 jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
 char *jitas_findInstructionError(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
 bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *needsRex);
 bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg);
-void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
 void jitas_addError(jitas_context_t *ctx, char *msg, int line);
+void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
+bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argument_t *src, jitas_argument_t *dst);
 
 int jitas_assemble(jitas_context_t *ctx, const char *str);
 bool jitas_link(jitas_context_t *ctx, void *data);
