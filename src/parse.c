@@ -268,6 +268,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 
 		jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
 		entry->size = 0;
+		entry->line = ctx->line;
 		entry->symbol = strdup(buff);
 		entry->ptr = entry->nextInsPtr = ctx->ptr;
 		entry->next = ctx->localSymbols;

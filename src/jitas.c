@@ -12,6 +12,7 @@ static void hacky8ByteWorkaround(jitas_context_t *ctx, char *ins, jitas_argument
 
 	jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
 	entry->size = 8;
+	entry->line = ctx->line;
 	entry->symbol = arg->symbol;
 	entry->next = ctx->symbols;
 	ctx->symbols = entry;
@@ -57,6 +58,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 
 	while(*str != 0)
 	{
+		ctx->line++;
 		if(!jitas_parse(&str, ctx, buff, &src, &dst))
 			continue;
 
@@ -111,7 +113,7 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 		if(resolved == NULL)
 		{
 			asprintf(&err, "Symbol resolver returned NULL for symbol '%s'", curr->symbol);
-			jitas_addError(ctx, err, -1);
+			jitas_addError(ctx, err, curr->line);
 			return false;
 		}
 		else if((curr->size == 1 && (diff < INT8_MIN || diff > INT8_MAX))
@@ -119,7 +121,7 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 		{
 			asprintf(&err, "Distance to symbol '%s' is too far for a rel%s jump/call",
 				curr->symbol, curr->size == 1 ? "8" : "32");
-			jitas_addError(ctx, err, -1);
+			jitas_addError(ctx, err, curr->line);
 			return false;
 		}
 
@@ -139,7 +141,8 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 				break;
 			default:
 				asprintf(&err, "Cannot link symbol of size %d\n", curr->size);
-				jitas_addError(ctx, err, -1);
+				jitas_addError(ctx, err, curr->line);
+				return false;
 		}
 
 		curr = curr->next;

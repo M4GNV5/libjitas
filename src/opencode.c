@@ -31,6 +31,7 @@ static void jitas_placeArg(jitas_context_t *ctx, jitas_instruction_t *ins, jitas
 	{
 		jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
 		entry->size = opArg == JITAS_ARG_REL8 ? 1 : 4;
+		entry->line = ctx->line;
 		entry->symbol = arg->symbol;
 		entry->nextInsPtr = ctx->ptr + entry->size; //TODO is this correct for all instructions?
 		entry->ptr = ctx->ptr;
@@ -134,6 +135,7 @@ void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument
 
 			jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
 			entry->size = 4;
+			entry->line = ctx->line;
 			entry->symbol = dst->symbol;
 			entry->ptr = ctx->ptr;
 			entry->next = ctx->symbols;

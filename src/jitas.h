@@ -65,6 +65,7 @@ typedef struct
 typedef struct jitas_symboltable
 {
 	int size;
+	int line;
 	const char *symbol;
 	uint8_t *nextInsPtr;
 	uint8_t *ptr;
