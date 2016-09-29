@@ -12,6 +12,7 @@ typedef enum
 	JITAS_ARG_IMM, //size defined by arg.size
 	JITAS_ARG_MODRM, //modrm byte + optional sib byte + optional disp8/disp32
 	JITAS_ARG_SYMBOL, //symbol (assembled as either rel8, rel32 or modrm)
+	JITAS_ARG_SYMBOL_ADDRESS, //symbol address (assembled as imm64)
 
 	//special
 	JITAS_ARG_IMM8, //imm8 on a 2/4/8 byte instruction

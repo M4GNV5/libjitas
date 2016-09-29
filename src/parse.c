@@ -84,10 +84,15 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 				arg->needsRex = false;
 				arg->imm = strtol(*str, (void *)str, 0);
 			}
-			/*else if(isalpha(**str))
+			else if(isalpha(**str))
 			{
-				//TODO label
-			}*/
+				if(parseIdentifier(str, buff, 128) == 0)
+					return false;
+
+				arg->type = JITAS_ARG_SYMBOL_ADDRESS;
+				arg->size = sizeof(void *);
+				arg->symbol = strdup(buff);
+			}
 			else
 			{
 				return false;

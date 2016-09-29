@@ -44,6 +44,20 @@ static void jitas_placeArg(jitas_context_t *ctx, jitas_instruction_t *ins, jitas
 			*(int32_t *)ctx->ptr = 0;
 		ctx->ptr += entry->size;
 	}
+	else if(arg->type == JITAS_ARG_SYMBOL_ADDRESS)
+	{
+		jitas_symboltable_t *entry = malloc(sizeof(jitas_symboltable_t));
+		entry->size = sizeof(void *);
+		entry->line = ctx->line;
+		entry->symbol = arg->symbol;
+		entry->nextInsPtr = ctx->ptr + sizeof(void *);
+		entry->ptr = ctx->ptr;
+		entry->next = ctx->symbols;
+		ctx->symbols = entry;
+
+		*(void **)ctx->ptr = 0;
+		ctx->ptr += sizeof(void *);
+	}
 	else if(opArg == JITAS_ARG_IMM || opArg == JITAS_ARG_IMM_MAX32)
 	{
 		int size = arg->size > 4 && opArg == JITAS_ARG_IMM_MAX32 ? 4 : arg->size;

@@ -43,6 +43,8 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 	if(arg->type == JITAS_ARG_REG && opArg == JITAS_ARG_REGA && arg->mem.base == 0)
 		return true;
 
+	if(arg->type == JITAS_ARG_SYMBOL_ADDRESS && opArg == JITAS_ARG_IMM)
+		return true;
 	if(arg->type == JITAS_ARG_REG && opArg == JITAS_ARG_MODRM)
 			return true;
 
