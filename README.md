@@ -1,20 +1,53 @@
 #libjitas
 
-##Functions
+##Documentation
 ```C
-//ptr is a pointer where to put the assembled instructions
-//	(you probably want this to be executable memory)
-//str is the assembly source code
-//returns the amount of bytes written to ptr
-int jitas_assemble(uint8_t *ptr, const char *str);
+//this is the type of the 'resolver' callback within the 'context' object
+//if a symbol cannot be resolved it shall return NULL
+typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 
-//assemble errors can be retrieved with this function
+//this is the conext struct passed to all functions
+//you have to set 'ptr' to a pointer where the assembled instructions will be written
+//and 'resolver', a function that will be used by jitas_link to resolve symbols
+typedef struct
+{
+	int line;
+	uint8_t *ptr;
+	struct errorlist *firstError;
+	struct errorlist *lastError;
+	jitas_symboltable_t *symbols;
+	jitas_symboltable_t *localSymbols;
+	jitas_symbolresolver_t resolver;
+} jitas_context_t;
+
+//assembles a assemble code string
+//returns the count of bytes written to ctx->ptr
+//'ctx' is a context object ('ptr' should be set by you)
+//'str' is the assembly source code string
+int jitas_assemble(jitas_context_t *ctx, const char *str);
+
+//links symbol references in assembled instructions
+//returns true if all symbols could be resolved, false otherwise
+//'ctx' is the context object passed to 'jitas_assemble' ('resolver' should be set by you)
+//'data' will be passed to the resolver
+bool jitas_link(jitas_context_t *ctx, void *data);
+
+//assemble and link errors can be retrieved with this function
 //you probably want to call this in a loop to clear out all errors (as there can be multiple)
-char *jitas_error(int *line);
+//'ctx' is the context object used before with 'jitas_assemble' and/or 'jitas_link'
+//'line' is a pointer to an int that will be set to the line where the error occured
+char *jitas_error(jitas_context_t *ctx, int *line);
+
+//this can be used to retrieve the address of a symbol defined in assembly code
+//if the symbol is not found, NULL is returned, otherwise the address of the symbol
+//'ctx' is the context passed to 'jitas_assemble'
+//'label' is the name of the label
+uint8_t *jitas_findLocalSymbol(jitas_context_t *ctx, const char *label);
 ```
 
-##Short Example
-This example assembles `mov %rax, 42(%rbx)` and hexdumps the assembled instruction to stdout
+##Example
+This example assembles `mov %rax, 42(%rbx)` and hexdumps the assembled instruction to stdout.
+For a more complex example (that is basically a assembly interpreter) check [test.c](test.c)
 ```C
 int main()
 {
@@ -43,72 +76,5 @@ int main()
 	}
 	printf("\n");
 	return 0;
-}
-```
-
-##Long Example
-This example assembles code from a file, puts the bytecode into a executable
-mapped memory region and calls it (putting argc into `%rdi` and argv into `%rsi`)
-```C
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <sys/mman.h>
-
-#include "src/jitas.h"
-
-typedef intptr_t (*asmfunc)(int argc, char **argv);
-
-int main(int argc, char **argv)
-{
-	if(argc < 2)
-	{
-		fprintf(stderr, "Usage: %s <file>\n", argv[0]);
-		return 1;
-	}
-
-	//open file
-	FILE *fd = fopen(argv[1], "rb");
-
-	if(fd == NULL)
-	{
-		fprintf(stderr, "Invalid file %s\n", argv[1]);
-		return 1;
-	}
-
-	//get file size
-	fseek(fd, 0, SEEK_END);
-	long fsize = ftell(fd);
-	fseek(fd, 0, SEEK_SET);
-
-	//read file into buffer
-	char *str = malloc(fsize + 1);
-	fread(str, fsize, 1, fd);
-	fclose(fd);
-
-	str[fsize] = 0;
-
-	//allocate a executable memory region
-	uint8_t *buff = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-	//assemble the assembly code from the file into said memory region
-	int len = jitas_assemble(buff, str);
-
-	//output all assembly errors
-	for(;;)
-	{
-		int line;
-		char *err = jitas_error(&line);
-		if(err == NULL)
-			break;
-
-		fprintf(stderr, "line %d: %s\n", line, err);
-		free(err);
-	}
-
-	//call the assembled instructions like a function
-	asmfunc func = (void *)buff;
-	return func(argc, argv);
 }
 ```
