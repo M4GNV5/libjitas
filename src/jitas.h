@@ -62,13 +62,13 @@ typedef struct
 	int64_t flags;
 } jitas_instruction_t;
 
-typedef struct jitas_linktable
+typedef struct jitas_symboltable
 {
 	int size;
 	const char *symbol;
 	uint8_t *nextInsPtr;
 	uint8_t *ptr;
-	struct jitas_linktable *next;
+	struct jitas_symboltable *next;
 } jitas_symboltable_t;
 
 typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
@@ -80,6 +80,7 @@ typedef struct
 	struct errorlist *firstError;
 	struct errorlist *lastError;
 	jitas_symboltable_t *symbols;
+	jitas_symboltable_t *localSymbols;
 	jitas_symbolresolver_t resolver;
 } jitas_context_t;
 
@@ -95,6 +96,7 @@ void jitas_addError(jitas_context_t *ctx, char *msg, int line);
 void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
 bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argument_t *src, jitas_argument_t *dst);
 
+uint8_t *jitas_findLocalSymbol(jitas_context_t *ctx, const char *label);
 int jitas_assemble(jitas_context_t *ctx, const char *str);
 bool jitas_link(jitas_context_t *ctx, void *data);
 char *jitas_error(jitas_context_t *ctx, int *line);

@@ -50,6 +50,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 
 	ctx->line = 0;
 	ctx->symbols = NULL;
+	ctx->localSymbols = NULL;
 	ctx->firstError = NULL;
 	ctx->lastError = NULL;
 	uint8_t *startPtr = ctx->ptr;
@@ -82,13 +83,29 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 	return len;
 }
 
+uint8_t *jitas_findLocalSymbol(jitas_context_t *ctx, const char *label)
+{
+	jitas_symboltable_t *curr = ctx->localSymbols;
+	while(curr != NULL)
+	{
+		if(strcmp(curr->symbol, label) == 0)
+			return curr->ptr;
+
+		curr = curr->next;
+	}
+	return NULL;
+}
+
 bool jitas_link(jitas_context_t *ctx, void *data)
 {
 	char *err;
 	jitas_symboltable_t *curr = ctx->symbols;
 	while(curr != NULL)
 	{
-		uint8_t *resolved = ctx->resolver(curr->symbol, data);
+		uint8_t *resolved = jitas_findLocalSymbol(ctx, curr->symbol);
+		if(resolved == NULL)
+			resolved = ctx->resolver(curr->symbol, data);
+
 		ptrdiff_t diff = resolved - curr->nextInsPtr;
 
 		if(resolved == NULL)
@@ -109,7 +126,7 @@ bool jitas_link(jitas_context_t *ctx, void *data)
 		switch(curr->size)
 		{
 			case 1:
-				*curr->ptr = diff;
+				*(int8_t *)curr->ptr = diff;
 				break;
 			case 2:
 				*(int16_t *)curr->ptr = diff; //is this used/needed anywhere?
