@@ -1,0 +1,8 @@
+#binary files
+bin/
+
+#intel manual, system V spec etc.
+ressources/
+
+#file with ideas on what to implement
+ideas.txt
