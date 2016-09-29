@@ -323,6 +323,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 				skipSpaces(str);
 				if(**str != ',')
 					break;
+				(*str)++;
 			}
 
 			expectEol(ctx, str);
