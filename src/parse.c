@@ -66,6 +66,8 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 		case '\n':
 		case 0:
 			arg->type = JITAS_ARG_NONE;
+			arg->needsRex = false;
+			arg->size = 0;
 			break;
 		case '%':
 			(*str)++;

@@ -10,19 +10,21 @@ static const char *argTypeTexts[][4] = {
 	[JITAS_ARG_MODRM] = {"r/m8", "r/m16", "r/m32", "r/m64"},
 };
 
-static const char *insTypeTexts[][3] = {
+static const char *insTypeTexts[][4] = {
 	//common
 	[JITAS_ARG_NONE] = {NULL, NULL, NULL},
-	[JITAS_ARG_REG] = {"r8", "r64", "r"},
-	[JITAS_ARG_IMM] = {"imm8", "imm64", "imm"},
-	[JITAS_ARG_MODRM] = {"r/m8", "r/m64", "r/m"},
+	[JITAS_ARG_REG] = {"???", "r8", "r64", "r"},
+	[JITAS_ARG_IMM] = {"???", "imm8", "imm64", "imm"},
+	[JITAS_ARG_MODRM] = {"r/m", "r/m8", "r/m64", "r/m"},
 
 	//special
-	[JITAS_ARG_IMM8] = {"imm8", "imm8", "imm8"},
-	[JITAS_ARG_IMM16] = {"imm16", "imm16", "imm16"},
-	[JITAS_ARG_IMM_MAX32] = {"imm8", "imm64", "imm16/imm32"},
-	[JITAS_ARG_REGA] = {"%al", "%rax", "%ax/%eax/%rax"},
-	[JITAS_ARG_REGCL] = {"%cl", "%cl", "%cl"},
+	[JITAS_ARG_IMM8] = {"imm8", "imm8", "imm8", "imm8"},
+	[JITAS_ARG_IMM16] = {"imm16", "imm16", "imm16", "imm16"},
+	[JITAS_ARG_IMM_MAX32] = {"???", "imm8", "imm64", "imm16/imm32"},
+	[JITAS_ARG_REL8] = {"rel8", "rel8", "rel8", "rel8"},
+	[JITAS_ARG_REL32] = {"rel32", "rel32", "rel32", "rel32"},
+	[JITAS_ARG_REGA] = {"???", "%al", "%rax", "%ax/%eax/%rax"},
+	[JITAS_ARG_REGCL] = {"???", "%cl", "%cl", "%cl"},
 };
 static const char sizeExtensions[] = {'b', 'q', 0};
 
