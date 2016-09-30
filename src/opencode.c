@@ -179,7 +179,7 @@ void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument
 			if(dst->needsRex && dst->mem.base > 7)
 				*rexPtr |= 0b0001;
 
-			if(dst->mem.scale == 0 || (dst->type == JITAS_ARG_MODRM && (dst->mem.base & 7) != 4))
+			if(dst->mem.scale == 0 && (dst->mem.base & 7) != 4)
 			{
 				modrm.rm = dst->mem.base & 7;
 				*ctx->ptr++ = *(uint8_t *)&modrm;
