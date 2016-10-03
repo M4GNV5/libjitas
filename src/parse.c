@@ -280,8 +280,8 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 	int len = parseIdentifier(str, buff, 32);
 	if(len == 0)
 	{
-		buff[31] = 0;
-		asprintf(&errbuff, "Unexpected '%s'", buff);
+		ctx->line++;
+		asprintf(&errbuff, "Expected identifier got '%c'", **str);
 		jitas_addError(ctx, errbuff, ctx->line);
 		skipToNewline(str);
 		return false;
@@ -333,6 +333,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 				(*str)++;
 			}
 
+			ctx->line++;
 			expectEol(ctx, str);
 			return false;
 		}
@@ -345,11 +346,13 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 			uint64_t count = strtoul(*str, (void *)str, 0);
 			ctx->ptr += count * size;
 
+			ctx->line++;
 			expectEol(ctx, str);
 			return false;
 		}
 	}
 
+	ctx->line++;
 	skipSpaces(str);
 	argStart = *str;
 	if(!parseArg(str, src))

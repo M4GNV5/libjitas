@@ -58,7 +58,6 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 
 	while(*str != 0)
 	{
-		ctx->line++;
 		if(!jitas_parse(&str, ctx, buff, &src, &dst))
 			continue;
 
