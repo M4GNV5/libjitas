@@ -37,12 +37,12 @@ static bool expectEol(jitas_context_t *ctx, const char **str)
 	return true;
 }
 
-static int parseIdentifier(const char **str, char *buff, int maxlen)
+static int parseIdentifier(const char **str, char *buff, int maxlen, const char *extraToken)
 {
 	int len = 0;
 	char c = *(*str)++;
 
-	while(isalnum(c) && len <= maxlen)
+	while(len <= maxlen && (isalnum(c) || (extraToken != NULL && strchr(extraToken, c) != NULL)))
 	{
 		*buff++ = c;
 		c = *(*str)++;
@@ -57,7 +57,7 @@ static int parseIdentifier(const char **str, char *buff, int maxlen)
 	return len;
 }
 
-static bool parseArg(const char **str, jitas_argument_t *arg)
+static bool parseArg(const char **str, jitas_argument_t *arg, const char *identifierToken)
 {
 	char buff[128];
 	char curr = **str;
@@ -71,7 +71,7 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 			break;
 		case '%':
 			(*str)++;
-			if(parseIdentifier(str, buff, 128) == 0)
+			if(parseIdentifier(str, buff, 128, NULL) == 0)
 				return false;
 			jitas_findRegisterArg(buff, arg);
 			break;
@@ -84,9 +84,9 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 				arg->needsRex = false;
 				arg->imm = strtol(*str, (void *)str, 0);
 			}
-			else if(isalpha(**str))
+			else if(isalpha(**str) || strchr(identifierToken, **str))
 			{
-				if(parseIdentifier(str, buff, 128) == 0)
+				if(parseIdentifier(str, buff, 128, identifierToken) == 0)
 					return false;
 
 				arg->type = JITAS_ARG_SYMBOL_ADDRESS;
@@ -119,7 +119,7 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 
 				int8_t size;
 
-				if(parseIdentifier(str, buff, 128) == 0)
+				if(parseIdentifier(str, buff, 128, NULL) == 0)
 					return false;
 				jitas_findRegister(buff, &size, &arg->mem.base, &arg->needsRex);
 				if(size != sizeof(void *))
@@ -135,7 +135,7 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 
 					bool needsRex;
 
-					if(parseIdentifier(str, buff, 128) == 0)
+					if(parseIdentifier(str, buff, 128, NULL) == 0)
 						return false;
 					jitas_findRegister(buff, &size, &arg->mem.index, &needsRex);
 					arg->needsRex = arg->needsRex || needsRex;
@@ -164,9 +164,9 @@ static bool parseArg(const char **str, jitas_argument_t *arg)
 				if(curr != ')')
 					return false;
 			}
-			else if(isalpha(**str))
+			else if(isalpha(**str) || strchr(identifierToken, **str))
 			{
-				if(parseIdentifier(str, buff, 128) == 0)
+				if(parseIdentifier(str, buff, 128, identifierToken) == 0)
 					return false;
 
 				arg->type = JITAS_ARG_SYMBOL;
@@ -277,7 +277,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 		return false;
 	}
 
-	int len = parseIdentifier(str, buff, 32);
+	int len = parseIdentifier(str, buff, 32, ctx->identifierToken);
 	if(len == 0)
 	{
 		ctx->line++;
@@ -355,7 +355,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 	ctx->line++;
 	skipSpaces(str);
 	argStart = *str;
-	if(!parseArg(str, src))
+	if(!parseArg(str, src, ctx->identifierToken))
 	{
 		asprintf(&errbuff, "Invalid argument '%.*s'", (int)(*str - argStart), argStart);
 		jitas_addError(ctx, errbuff, ctx->line);
@@ -369,7 +369,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 		(*str)++;
 		skipSpaces(str);
 		argStart = *str;
-		if(!parseArg(str, dst))
+		if(!parseArg(str, dst, ctx->identifierToken))
 		{
 			asprintf(&errbuff, "Invalid argument '%.*s'", (int)(*str - argStart), argStart);
 			jitas_addError(ctx, errbuff, ctx->line);

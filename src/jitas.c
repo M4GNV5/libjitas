@@ -56,6 +56,9 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 	ctx->lastError = NULL;
 	uint8_t *startPtr = ctx->ptr;
 
+	if(ctx->identifierToken == NULL)
+		ctx->identifierToken = "_.";
+
 	while(*str != 0)
 	{
 		if(!jitas_parse(&str, ctx, buff, &src, &dst))

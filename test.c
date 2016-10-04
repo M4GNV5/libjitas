@@ -50,6 +50,7 @@ int main(int argc, char **argv)
 	jitas_context_t ctx;
 	ctx.ptr = buff;
 	ctx.resolver = symbolresolve_dlfcn;
+	ctx.identifierToken = NULL;
 	int len = jitas_assemble(&ctx, str);
 	bool hadError = !jitas_link(&ctx, NULL);
 

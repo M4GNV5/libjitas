@@ -79,6 +79,7 @@ typedef struct jitas_context
 {
 	int line;
 	uint8_t *ptr;
+	const char *identifierToken;
 	struct errorlist *firstError;
 	struct errorlist *lastError;
 	jitas_symboltable_t *symbols;
