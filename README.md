@@ -73,19 +73,28 @@ or `context.resolver` before calling `jitas_assemble` or `jitas_link` respective
 This example assembles `mov %rax, 42(%rbx)` and hexdumps the assembled instruction to stdout.
 For a more complex example (that is basically a assembly interpreter) check [test.c](test.c)
 ```C
+#include <stdio.h>
+#include <stdlib.h>
+#include "src/jitas.h"
+
 int main()
 {
 	//the assembled instruction will be put into this buffer
 	uint8_t buff[32] = {0};
+	//context object for the jitas functions
+	jitas_context_t ctx;
+
+	//initialize the context with 'buff' as instruction buffer and no symbol resolver
+	jitas_init(&ctx, buff, NULL);
 
 	//assemble the instruction
-	int len = jitas_assemble(buff, "mov %rax, 42(%rbx)");
+	int len = jitas_assemble(&ctx, "mov %rax, 42(%rbx)");
 
 	//print any errors
 	for(;;)
 	{
 		int line;
-		char *err = jitas_error(&line);
+		char *err = jitas_error(&ctx, &line);
 		if(err == NULL)
 			break;
 
@@ -101,4 +110,5 @@ int main()
 	printf("\n");
 	return 0;
 }
+
 ```
