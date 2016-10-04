@@ -42,22 +42,25 @@ static void hacky8ByteWorkaround(jitas_context_t *ctx, char *ins, jitas_argument
 	arg->mem.scale = 0;
 }
 
+void jitas_init(jitas_context_t *ctx, uint8_t *ptr, jitas_symbolresolver_t resolver)
+{
+	ctx->line = 0;
+	ctx->ptr = ptr;
+	ctx->identifierToken = "_.";
+	ctx->symbols = NULL;
+	ctx->localSymbols = NULL;
+	ctx->firstError = NULL;
+	ctx->lastError = NULL;
+	ctx->resolver = resolver;
+}
+
 int jitas_assemble(jitas_context_t *ctx, const char *str)
 {
 	char buff[32];
 	jitas_argument_t src;
 	jitas_argument_t dst;
 	jitas_instruction_t *ins;
-
-	ctx->line = 0;
-	ctx->symbols = NULL;
-	ctx->localSymbols = NULL;
-	ctx->firstError = NULL;
-	ctx->lastError = NULL;
 	uint8_t *startPtr = ctx->ptr;
-
-	if(ctx->identifierToken == NULL)
-		ctx->identifierToken = "_.";
 
 	while(*str != 0)
 	{
@@ -82,9 +85,7 @@ int jitas_assemble(jitas_context_t *ctx, const char *str)
 		jitas_encode(ctx, ins, &src, &dst);
 	}
 
-	int len = ctx->ptr - startPtr;
-	ctx->ptr = startPtr;
-	return len;
+	return ctx->ptr - startPtr;
 }
 
 uint8_t *jitas_findLocalSymbol(jitas_context_t *ctx, const char *label)

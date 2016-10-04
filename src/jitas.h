@@ -99,6 +99,7 @@ void jitas_addError(jitas_context_t *ctx, char *msg, int line);
 void jitas_encode(jitas_context_t *ctx, jitas_instruction_t *ins, jitas_argument_t *src, jitas_argument_t *dst);
 bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argument_t *src, jitas_argument_t *dst);
 
+void jitas_init(jitas_context_t *ctx, uint8_t *ptr, jitas_symbolresolver_t resolver);
 uint8_t *jitas_findLocalSymbol(jitas_context_t *ctx, const char *label);
 int jitas_assemble(jitas_context_t *ctx, const char *str);
 bool jitas_link(jitas_context_t *ctx, void *data);
