@@ -42,7 +42,7 @@ static int parseIdentifier(const char **str, char *buff, int maxlen, const char 
 	int len = 0;
 	char c = *(*str)++;
 
-	while(len <= maxlen && (isalnum(c) || (extraToken != NULL && strchr(extraToken, c) != NULL)))
+	while(len <= maxlen && (isalnum(c) || (extraToken != NULL && c != 0 && strchr(extraToken, c) != NULL)))
 	{
 		*buff++ = c;
 		c = *(*str)++;
@@ -281,7 +281,7 @@ bool jitas_parse(const char **str, jitas_context_t *ctx, char *buff, jitas_argum
 	if(len == 0)
 	{
 		ctx->line++;
-		asprintf(&errbuff, "Expected identifier got '%c'", **str);
+		asprintf(&errbuff, "Expected instruction got '%c'", **str);
 		jitas_addError(ctx, errbuff, ctx->line);
 		skipToNewline(str);
 		return false;
