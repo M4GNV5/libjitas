@@ -26,7 +26,7 @@ static bool expectEol(jitas_context_t *ctx, const char **str)
 	if(**str != '\n' && **str != 0)
 	{
 		char *buff;
-		asprintf(&buff, "Expected line end at line %d", ctx->line);
+		asprintf(&buff, "Expected line end");
 		jitas_addError(ctx, buff, ctx->line);
 		skipToNewline(str);
 		return false;
