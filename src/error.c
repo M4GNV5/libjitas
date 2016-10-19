@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "jitas.h"
 
@@ -28,7 +29,6 @@ static const char *insTypeTexts[][4] = {
 	[JITAS_ARG_REGA] = {"???", "%al", "%rax", "%ax/%eax/%rax"},
 	[JITAS_ARG_REGCL] = {"???", "%cl", "%cl", "%cl"},
 };
-static const char sizeExtensions[] = {'b', 'q', 0};
 
 static int convertSize(int size)
 {
@@ -42,10 +42,9 @@ static int convertSize(int size)
 			return 2;
 		case 8:
 			return 3;
+		default:
+			assert(0);
 	}
-
-	//TODO raise SIGABRT?
-	return 0;
 }
 
 char *jitas_findInstructionError(const char *label, jitas_argument_t *src, jitas_argument_t *dst)

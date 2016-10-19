@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 
 #include "jitas.h"
 
@@ -33,7 +34,7 @@ static void jitas_placeArg(jitas_context_t *ctx, jitas_instruction_t *ins, jitas
 		entry->size = opArg == JITAS_ARG_REL8 ? 1 : 4;
 		entry->line = ctx->line;
 		entry->symbol = arg->symbol;
-		entry->nextInsPtr = ctx->ptr + entry->size; //TODO is this correct for all instructions?
+		entry->nextInsPtr = ctx->ptr + entry->size;
 		entry->ptr = ctx->ptr;
 		entry->next = ctx->symbols;
 		ctx->symbols = entry;
@@ -69,13 +70,13 @@ static void jitas_placeArg(jitas_context_t *ctx, jitas_instruction_t *ins, jitas
 					size = 1;
 					break;
 				case JITAS_SIZE_ANY:
-					size = 4; //TODO cause an error here instead?
+					assert(0);
 					break;
 				case JITAS_SIZE_PTR:
-					size = 8;
+					size = sizeof(void *);
 					break;
 				case JITAS_SIZE_IGNORE:
-					//TODO cause an error here
+					assert(0);
 					break;
 			}
 		}
