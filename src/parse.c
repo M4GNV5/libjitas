@@ -225,7 +225,8 @@ jitas_instruction_t *jitas_findUnsizedInstruction(jitas_context_t *ctx, char *bu
 		dst->size = size;
 		buff[len - 1] = 0;
 	}
-	else if(src->size == 0 && dst->size != 0)
+
+	if(src->size == 0 && dst->size != 0)
 	{
 		src->size = dst->size;
 	}
