@@ -91,6 +91,7 @@ static bool parseArg(const char **str, jitas_argument_t *arg, const char *identi
 
 				arg->type = JITAS_ARG_SYMBOL_ADDRESS;
 				arg->size = sizeof(void *);
+				arg->needsRex = true;
 				arg->symbol = strdup(buff);
 			}
 			else
