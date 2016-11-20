@@ -60,7 +60,8 @@ jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *
 			do
 			{
 				jitas_instruction_t *ins = jitas_instructions + i;
-				if(compareArgs(src, ins->source, ins) && compareArgs(dst, ins->destination, ins))
+				if(compareArgs(src, ins->source, ins) && compareArgs(dst, ins->destination, ins)
+					&& (src->size == dst->size || ins->source >= JITAS_ARG_IMM8 || ins->destination >= JITAS_ARG_IMM8))
 					return ins;
 
 				i++;
@@ -191,11 +192,11 @@ jitas_instruction_t jitas_instructions[] = {
 	{NULL, 1, {0x31}, JITAS_SIZE_ANY, JITAS_ARG_REG, JITAS_ARG_MODRM},
 	{NULL, 1, {0x32}, JITAS_SIZE_BYTE, JITAS_ARG_MODRM, JITAS_ARG_REG},
 	{NULL, 1, {0x33}, JITAS_SIZE_ANY, JITAS_ARG_MODRM, JITAS_ARG_REG},
-	
+
 	{"cbtw", 2, {0x66, 0x98}, JITAS_SIZE_IGNORE, JITAS_ARG_NONE, JITAS_ARG_NONE},
 	{"cwtl", 1, {0x98}, JITAS_SIZE_IGNORE, JITAS_ARG_NONE, JITAS_ARG_NONE},
 	{"cltq", 2, {0x74, 0x98}, JITAS_SIZE_IGNORE, JITAS_ARG_NONE, JITAS_ARG_NONE},
-	
+
 	{"cwtd", 2, {0x66, 0x99}, JITAS_SIZE_IGNORE, JITAS_ARG_NONE, JITAS_ARG_NONE},
 	{"cltd", 1, {0x99}, JITAS_SIZE_IGNORE, JITAS_ARG_NONE, JITAS_ARG_NONE},
 	{"cqto", 2, {0x48, 0x99}, JITAS_SIZE_IGNORE, JITAS_ARG_NONE, JITAS_ARG_NONE},
