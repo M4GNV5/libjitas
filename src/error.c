@@ -13,21 +13,21 @@ static const char *argTypeTexts[][4] = {
 	[JITAS_ARG_SYMBOL_ADDRESS] = {"imm8", "imm16", "imm32", "imm64"},
 };
 
-static const char *insTypeTexts[][4] = {
+static const char *insTypeTexts[][6] = {
 	//common
-	[JITAS_ARG_NONE] = {NULL, NULL, NULL},
-	[JITAS_ARG_REG] = {"???", "r8", "r64", "r"},
-	[JITAS_ARG_IMM] = {"???", "imm8", "imm64", "imm"},
-	[JITAS_ARG_MODRM] = {"r/m", "r/m8", "r/m64", "r/m"},
+	[JITAS_ARG_NONE] = {NULL, NULL, NULL, NULL, NULL, NULL},
+	[JITAS_ARG_REG] = {"???", "r8", "r64", "r16", "r32", "r64"},
+	[JITAS_ARG_IMM] = {"???", "imm8", "imm64", "imm16", "imm32", "imm64"},
+	[JITAS_ARG_MODRM] = {"r/m", "r/m8", "r/m64", "r/m16", "r/m32", "r/m64"},
 
 	//special
-	[JITAS_ARG_IMM8] = {"imm8", "imm8", "imm8", "imm8"},
-	[JITAS_ARG_IMM16] = {"imm16", "imm16", "imm16", "imm16"},
-	[JITAS_ARG_IMM_MAX32] = {"???", "imm8", "imm64", "imm16/imm32"},
-	[JITAS_ARG_REL8] = {"rel8", "rel8", "rel8", "rel8"},
-	[JITAS_ARG_REL32] = {"rel32", "rel32", "rel32", "rel32"},
-	[JITAS_ARG_REGA] = {"???", "%al", "%rax", "%ax/%eax/%rax"},
-	[JITAS_ARG_REGCL] = {"???", "%cl", "%cl", "%cl"},
+	[JITAS_ARG_IMM8] = {"imm8", "imm8", "imm8", "imm8", "imm8", "imm8"},
+	[JITAS_ARG_IMM16] = {"imm16", "imm16", "imm16", "imm16", "imm16", "imm16"},
+	[JITAS_ARG_IMM_MAX32] = {"???", "imm8", "imm64", "imm16", "imm32", "imm32"},
+	[JITAS_ARG_REL8] = {"rel8", "rel8", "rel8", "rel8", "rel8", "rel8"},
+	[JITAS_ARG_REL32] = {"rel32", "rel32", "rel32", "rel32", "rel32", "rel32"},
+	[JITAS_ARG_REGA] = {"???", "%al", "%rax", "%ax", "%eax", "%rax"},
+	[JITAS_ARG_REGCL] = {"%cl", "%cl", "%cl", "%cl", "%cl", "%cl"},
 };
 
 static int convertSize(int size)
@@ -81,13 +81,42 @@ char *jitas_findInstructionError(const char *label, jitas_argument_t *src, jitas
 					startBuff = newBuff;
 				}
 
+				const char *fmt;
+				int arg0;
+				int arg1;
+
 				if(ins->source != JITAS_ARG_NONE)
-					buff += sprintf(buff, "    %s %s, %s\n", label, insTypeTexts[ins->source][ins->size],
-						insTypeTexts[ins->destination][ins->size]);
+				{
+					fmt = "    %s %s, %s\n";
+					arg0 = ins->source;
+					arg1 = ins->destination;
+				}
 				else if(ins->destination != JITAS_ARG_NONE)
-					buff += sprintf(buff, "    %s %s\n", label, insTypeTexts[ins->destination][ins->size]);
+				{
+					fmt = "    %s %s\n";
+					arg0 = ins->destination;
+					arg1 = 0;
+				}
 				else
-					buff += sprintf(buff, "    %s\n", label);
+				{
+					fmt = "    %s\n";
+					arg0 = 0;
+					arg1 = 0;
+				}
+
+				buff += sprintf(buff, fmt, label,
+					insTypeTexts[arg0][ins->size],
+					insTypeTexts[arg1][ins->size]);
+				if(ins->size == JITAS_SIZE_ANY && ins->destination != JITAS_ARG_NONE)
+				{
+					buff += sprintf(buff, fmt, label,
+						insTypeTexts[arg0][JITAS_SIZE_ANY + 1],
+						insTypeTexts[arg1][JITAS_SIZE_ANY + 1]);
+
+					buff += sprintf(buff, fmt, label,
+						insTypeTexts[arg0][JITAS_SIZE_ANY + 2],
+						insTypeTexts[arg1][JITAS_SIZE_ANY + 2]);
+				}
 
 				i++;
 			} while(jitas_instructions[i].label == NULL);
