@@ -51,7 +51,7 @@ bool compareArgs(jitas_argument_t *arg, jitas_argtype_t opArg, jitas_instruction
 	return false;
 }
 
-jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst)
+jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst, bool *isKnown)
 {
 	for(int i = 0; i < jitas_instructionCount;)
 	{
@@ -67,6 +67,8 @@ jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *
 				i++;
 			} while(jitas_instructions[i].label == NULL);
 
+			if(isKnown != NULL)
+				*isKnown = true;
 			return NULL;
 		}
 		else
@@ -78,6 +80,8 @@ jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *
 		}
 	}
 
+	if(isKnown != NULL)
+		*isKnown = false;
 	return NULL;
 }
 

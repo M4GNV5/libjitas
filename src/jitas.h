@@ -91,7 +91,7 @@ extern int jitas_instructionCount;
 extern jitas_instruction_t jitas_instructions[];
 
 jitas_instruction_t *jitas_findUnsizedInstruction(jitas_context_t *ctx, char *buff, jitas_argument_t *src, jitas_argument_t *dst);
-jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
+jitas_instruction_t *jitas_findInstruction(const char *label, jitas_argument_t *src, jitas_argument_t *dst, bool *isKnown);
 char *jitas_findInstructionError(const char *label, jitas_argument_t *src, jitas_argument_t *dst);
 bool jitas_findRegister(const char *label, int8_t *size, uint8_t *id, bool *needsRex);
 bool jitas_findRegisterArg(const char *label, jitas_argument_t *arg);

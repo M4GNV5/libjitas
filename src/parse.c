@@ -206,13 +206,14 @@ jitas_instruction_t *jitas_findUnsizedInstruction(jitas_context_t *ctx, char *bu
 	int len = strlen(buff);
 	jitas_instruction_t *ins;
 	char *errbuff;
+	bool isKnown;
 
-	ins = jitas_findInstruction(buff, src, dst);
+	ins = jitas_findInstruction(buff, src, dst, &isKnown);
 	if(ins != NULL)
 	{
 		//size mismatches are probably okay here
 	}
-	else if(src->size == 0 && dst->size == 0)
+	else if(isKnown && src->size == 0 && dst->size == 0)
 	{
 		int size = sizeFromSuffix(buff[len - 1]);
 		if(size < 0)
@@ -236,8 +237,10 @@ jitas_instruction_t *jitas_findUnsizedInstruction(jitas_context_t *ctx, char *bu
 		dst->size = src->size;
 	}
 
-	ins = jitas_findInstruction(buff, src, dst);
 	if(ins == NULL)
+		ins = jitas_findInstruction(buff, src, dst, &isKnown);
+
+	if(!isKnown)
 	{
 		int size = sizeFromSuffix(buff[len - 1]);
 		if(size > 0)
@@ -256,12 +259,12 @@ jitas_instruction_t *jitas_findUnsizedInstruction(jitas_context_t *ctx, char *bu
 			}
 
 			buff[len - 1] = 0;
-			ins = jitas_findInstruction(buff, src, dst);
+			ins = jitas_findInstruction(buff, src, dst, NULL);
 		}
-
-		if(ins == NULL)
-			jitas_addError(ctx, jitas_findInstructionError(buff, src, dst), ctx->line);
 	}
+
+	if(ins == NULL)
+		jitas_addError(ctx, jitas_findInstructionError(buff, src, dst), ctx->line);
 
 	return ins;
 }
