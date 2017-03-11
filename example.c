@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 	}
 
 	//open file
-	FILE *fd = fopen(argv[1], "rb");
+	FILE *fd = fopen(argv[1], "r");
 
 	if(fd == NULL)
 	{
@@ -46,15 +46,13 @@ int main(int argc, char **argv)
 	//allocate a executable memory region
 	uint8_t *buff = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-	//assemble the assembly code from the file into said memory region
+	//assemble and link the code from the file into 'buff'
 	jitas_context_t ctx;
-	ctx.ptr = buff;
-	ctx.resolver = symbolresolve_dlfcn;
-	ctx.identifierToken = NULL;
+	jitas_init(&ctx, buff, symbolresolve_dlfcn);
 	int len = jitas_assemble(&ctx, str);
 	bool hadError = !jitas_link(&ctx, NULL);
 
-	//output all assembly errors
+	//output all assemble & link errors
 	for(;;)
 	{
 		int line;
@@ -67,11 +65,11 @@ int main(int argc, char **argv)
 		free(err);
 	}
 
-	//if jitas_assemble returns 0 when there was an error
+	//abort if there was an error
 	if(hadError)
 		return 1;
 
-	//dump the assembled instructions
+	//hexdump the assembled instructions
 	for(int i = 0; i < len; i++)
 		printf("%02hhX ", buff[i]);
 	printf("\n");
