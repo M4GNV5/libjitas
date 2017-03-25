@@ -1,14 +1,14 @@
-#libjitas
+# libjitas
 Library capable of assembling a source of assembly code in GNU syntax at runtime
 writing the assembled instructions to a pointer provided.
 
-##Example
+## Example
 This example assembles `mov %rax, 42(%rbx)` and hexdumps the assembled instruction to stdout.
 For a more complex example (that is basically a assembly interpreter) check [example.c](example.c)
 ```C
-#include <stdio.h>
-#include <stdlib.h>
-#include "src/jitas.h"
+# include <stdio.h>
+# include <stdlib.h>
+# include "src/jitas.h"
 
 int main()
 {
@@ -45,7 +45,7 @@ int main()
 }
 ```
 
-##Documentation
+## Documentation
 ```C
 typedef void *(*jitas_symbolresolver_t)(const char *symbol, void *data);
 ```
